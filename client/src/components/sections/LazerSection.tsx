@@ -2,14 +2,14 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Sun, PartyPopper, Dumbbell, Gamepad2, Baby, PawPrint, Bike, DoorOpen } from "lucide-react";
 
 const lazerItems = [
-  { nome: "Rooftop", icone: Sun, img: "/assets/venezia/placeholder.svg", desc: "Terraço panorâmico com vista privilegiada" },
-  { nome: "Salão de Festas", icone: PartyPopper, img: "/assets/venezia/placeholder.svg", desc: "Espaço amplo e sofisticado para eventos" },
-  { nome: "Academia", icone: Dumbbell, img: "/assets/venezia/placeholder.svg", desc: "Equipamentos modernos e ambiente climatizado" },
-  { nome: "Sala de Jogos", icone: Gamepad2, img: "/assets/venezia/placeholder.svg", desc: "Entretenimento para toda a família" },
-  { nome: "Brinquedoteca", icone: Baby, img: "/assets/venezia/placeholder.svg", desc: "Espaço lúdico e seguro para crianças" },
-  { nome: "Pet Place", icone: PawPrint, img: "/assets/venezia/placeholder.svg", desc: "Área exclusiva para seus pets" },
-  { nome: "Bicicletário", icone: Bike, img: "/assets/venezia/placeholder.svg", desc: "Estacionamento seguro para bicicletas" },
-  { nome: "Hall de Entrada", icone: DoorOpen, img: "/assets/venezia/placeholder.svg", desc: "Recepção elegante e moderna" },
+  { nome: "Rooftop", icone: Sun, img: "/assets/venezia/card-placeholder.svg", desc: "Terraço panorâmico com vista privilegiada" },
+  { nome: "Salão de Festas", icone: PartyPopper, img: "/assets/venezia/card-placeholder.svg", desc: "Espaço amplo e sofisticado para eventos" },
+  { nome: "Academia", icone: Dumbbell, img: "/assets/venezia/card-placeholder.svg", desc: "Equipamentos modernos e ambiente climatizado" },
+  { nome: "Sala de Jogos", icone: Gamepad2, img: "/assets/venezia/card-placeholder.svg", desc: "Entretenimento para toda a família" },
+  { nome: "Brinquedoteca", icone: Baby, img: "/assets/venezia/card-placeholder.svg", desc: "Espaço lúdico e seguro para crianças" },
+  { nome: "Pet Place", icone: PawPrint, img: "/assets/venezia/card-placeholder.svg", desc: "Área exclusiva para seus pets" },
+  { nome: "Bicicletário", icone: Bike, img: "/assets/venezia/card-placeholder.svg", desc: "Estacionamento seguro para bicicletas" },
+  { nome: "Hall de Entrada", icone: DoorOpen, img: "/assets/venezia/card-placeholder.svg", desc: "Recepção elegante e moderna" },
 ];
 
 export default function LazerSection() {
@@ -38,7 +38,7 @@ export default function LazerSection() {
         {/* Rooftop Highlight - usando imagem real do rooftop */}
         <div className="relative rounded-lg overflow-hidden mb-12 shadow-xl">
           <img
-            src="/assets/venezia/placeholder.svg"
+            src="/assets/venezia/card-placeholder.svg"
             alt="Rooftop Residencial Venezia"
             className="w-full h-[300px] md:h-[400px] object-cover"
           />

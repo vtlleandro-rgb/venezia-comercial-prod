@@ -97,12 +97,12 @@ export default function Navigation() {
           <img
             src={IMAGENS.logoVenezia}
             alt="Residencial Venezia"
-            className="h-14 w-auto brightness-0 invert"
+            className="h-16 w-auto"
           />
           <img
             src={IMAGENS.logoArtea}
             alt="ARTEÁ Empreendimentos"
-            className="h-8 w-auto opacity-80"
+            className="h-9 w-auto opacity-90"
           />
         </div>
 

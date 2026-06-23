@@ -32,7 +32,7 @@ export default function EmpreendimentoSection() {
           {/* Image */}
           <div className="relative rounded-lg overflow-hidden shadow-xl">
             <img
-              src="/assets/venezia/placeholder.svg"
+              src="/assets/venezia/card-placeholder.svg"
               alt="Fachada Residencial Venezia"
               className="w-full h-[400px] object-cover"
             />

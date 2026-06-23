@@ -37,7 +37,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: "Diferenciado",
     descricao: "Apartamento com 2 suítes, sacada com churrasqueira, maior área privativa do empreendimento.",
-    plantaImg: "/assets/venezia/placeholder.svg",
+    plantaImg: "/assets/venezia/card-placeholder.svg",
   },
   {
     id: "final-02",
@@ -48,7 +48,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: null,
     descricao: "Apartamento com 2 suítes, layout funcional e integrado, excelente iluminação natural.",
-    plantaImg: "/assets/venezia/placeholder.svg",
+    plantaImg: "/assets/venezia/card-placeholder.svg",
   },
   {
     id: "final-03",
@@ -59,7 +59,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: null,
     descricao: "Apartamento com 2 suítes, planta espelhada do Final 02, mesma qualidade e acabamento.",
-    plantaImg: "/assets/venezia/placeholder.svg",
+    plantaImg: "/assets/venezia/card-placeholder.svg",
   },
 ];
 
@@ -136,11 +136,11 @@ export const DIFERENCIAIS = [
 ];
 
 export const IMAGENS = {
-  heroBanner: "/assets/venezia/placeholder.svg",
+  heroBanner: "/assets/venezia/hero-venezia.svg",
   lifestyle: "https://d2xsxph8kpxj0f.cloudfront.net/310419663028476442/bFYmgaA9ybdAfHZuiPvNzY/venezia-lifestyle-A3T8kpDyfKjvAAqxgYvhHf.webp",
   location: "https://d2xsxph8kpxj0f.cloudfront.net/310419663028476442/bFYmgaA9ybdAfHZuiPvNzY/venezia-location-gQGt7cvL9AnG3T5jFxEdvF.webp",
-  logoArtea: "/assets/venezia/placeholder.svg",
-  logoVenezia: "/assets/venezia/placeholder.svg",
+  logoArtea: "/assets/venezia/logo-artea.svg",
+  logoVenezia: "/assets/venezia/logo-venezia.svg",
 };
 
 export const CONDICOES_COMERCIAIS = {

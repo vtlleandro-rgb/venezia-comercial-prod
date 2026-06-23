@@ -22,7 +22,7 @@ export default function HeroSection() {
         <img
           src={IMAGENS.logoVenezia}
           alt="Residencial Venezia"
-          className="h-24 md:h-32 w-auto mx-auto mb-8 brightness-0 invert drop-shadow-lg"
+          className="h-24 md:h-32 w-auto mx-auto mb-8 drop-shadow-lg"
         />
         
         <p className="text-white/80 text-lg md:text-xl font-light tracking-wide mb-2 font-sans">

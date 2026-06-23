@@ -57,7 +57,7 @@ export default function LocalizacaoSection() {
               <img
                 src={IMAGENS.logoVenezia}
                 alt="Venezia"
-                className="h-8 w-auto"
+                className="h-10 w-auto"
               />
               <div className="text-white text-xs leading-tight">
                 <p className="font-semibold">Residencial Venezia</p>

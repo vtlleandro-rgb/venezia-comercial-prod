@@ -101,7 +101,7 @@ export default function Footer() {
             <img
               src={IMAGENS.logoVenezia}
               alt="Residencial Venezia"
-              className="h-12 w-auto brightness-0 invert mb-4"
+              className="h-14 w-auto mb-4"
             />
             <p className="text-white/50 text-sm leading-relaxed">
               Residencial Venezia. Sofisticação para viver. Exclusividade para investir.

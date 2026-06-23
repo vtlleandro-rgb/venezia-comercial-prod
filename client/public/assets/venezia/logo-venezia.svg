@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" role="img" aria-labelledby="title desc">
+  <title id="title">Residencial Venezia</title>
+  <desc id="desc">Logotipo tipográfico provisório do Residencial Venezia.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" x2="1">
+      <stop offset="0" stop-color="#b99658"/>
+      <stop offset=".48" stop-color="#f0dfb3"/>
+      <stop offset="1" stop-color="#9f7a3b"/>
+    </linearGradient>
+  </defs>
+  <rect width="760" height="260" fill="none"/>
+  <g fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M304 119V84l76-45 76 45v35"/>
+    <path d="M326 119V96l54-32 54 32v23"/>
+    <path d="M364 119V93h32v26"/>
+  </g>
+  <text x="380" y="170" text-anchor="middle" fill="#f7f1e3" font-family="Georgia, 'Times New Roman', serif" font-size="54" letter-spacing="14">VENEZIA</text>
+  <text x="380" y="104" text-anchor="middle" fill="#d8bf83" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="8">RESIDENCIAL</text>
+  <rect x="245" y="196" width="270" height="2" fill="url(#gold)" opacity=".9"/>
+  <text x="380" y="230" text-anchor="middle" fill="#cdb47a" font-family="Arial, Helvetica, sans-serif" font-size="13" letter-spacing="5">TIJUCAS · SANTA CATARINA</text>
+</svg>
