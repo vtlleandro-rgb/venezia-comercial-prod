@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { UNIDADES, EMPREENDIMENTO, type Unidade, type UnidadeStatus } from "@/data/empreendimento";
 import { BarChart3, TrendingUp, Target, DollarSign, Check, Lock, ShieldCheck, PieChart, Printer } from "lucide-react";
@@ -11,6 +11,17 @@ import { toast } from "sonner";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 }).format(value);
+
+const getInitialStatuses = (): Record<string, UnidadeStatus> => {
+  const fallback = Object.fromEntries(UNIDADES.map((u) => [u.id, u.status])) as Record<string, UnidadeStatus>;
+  try {
+    const saved = localStorage.getItem("venezia_unidades_status");
+    return saved ? { ...fallback, ...JSON.parse(saved) } : fallback;
+  } catch {
+    localStorage.removeItem("venezia_unidades_status");
+    return fallback;
+  }
+};
 
 // Componente de Relatório Consolidado com gráfico
 function RelatorioConsolidado({
@@ -286,10 +297,18 @@ export default function DashboardSection() {
 
   // Estado sincronizado com localStorage
   const [unidadesStatus, setUnidadesStatus] = useState<Record<string, UnidadeStatus>>(() => {
-    const saved = localStorage.getItem("venezia_unidades_status");
-    if (saved) return JSON.parse(saved);
-    return Object.fromEntries(UNIDADES.map((u) => [u.id, u.status]));
+    return getInitialStatuses();
   });
+
+  useEffect(() => {
+    const syncStatuses = () => setUnidadesStatus(getInitialStatuses());
+    window.addEventListener("storage", syncStatuses);
+    window.addEventListener("venezia-status-update", syncStatuses);
+    return () => {
+      window.removeEventListener("storage", syncStatuses);
+      window.removeEventListener("venezia-status-update", syncStatuses);
+    };
+  }, []);
 
   // Modal de senha
   const [showPasswordModal, setShowPasswordModal] = useState(false);

@@ -3,6 +3,21 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 // Senha padrão de acesso restrito
 const SENHA_PADRAO = "venezia2025";
 
+const safeRandomId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+function readJsonStorage<T>(key: string, fallback: T): T {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) as T : fallback;
+  } catch {
+    localStorage.removeItem(key);
+    return fallback;
+  }
+}
+
 export interface LogEntry {
   id: string;
   unidade: string;
@@ -75,32 +90,41 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem("venezia_auth") === "true";
+    try {
+      return sessionStorage.getItem("venezia_auth") === "true";
+    } catch {
+      return false;
+    }
   });
 
   const [senha, setSenha] = useState<string>(() => {
-    return localStorage.getItem("venezia_senha") || SENHA_PADRAO;
+    try {
+      return localStorage.getItem("venezia_senha") || SENHA_PADRAO;
+    } catch {
+      return SENHA_PADRAO;
+    }
   });
 
   const [log, setLog] = useState<LogEntry[]>(() => {
-    const saved = localStorage.getItem("venezia_log");
-    return saved ? JSON.parse(saved) : [];
+    return readJsonStorage<LogEntry[]>("venezia_log", []);
   });
 
   const [dadosVenda, setDadosVenda] = useState<Record<string, DadosVenda>>(() => {
-    const saved = localStorage.getItem("venezia_dados_venda");
-    return saved ? JSON.parse(saved) : {};
+    return readJsonStorage<Record<string, DadosVenda>>("venezia_dados_venda", {});
   });
 
   const [propostas, setPropostas] = useState<PropostaRegistro[]>(() => {
-    const saved = localStorage.getItem("venezia_propostas");
-    return saved ? JSON.parse(saved) : [];
+    return readJsonStorage<PropostaRegistro[]>("venezia_propostas", []);
   });
 
   const authenticate = useCallback((inputSenha: string): boolean => {
     if (inputSenha === senha) {
       setIsAuthenticated(true);
-      sessionStorage.setItem("venezia_auth", "true");
+      try {
+        sessionStorage.setItem("venezia_auth", "true");
+      } catch {
+        // Sessão ainda funciona em memória.
+      }
       return true;
     }
     return false;
@@ -108,13 +132,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     setIsAuthenticated(false);
-    sessionStorage.removeItem("venezia_auth");
+    try {
+      sessionStorage.removeItem("venezia_auth");
+    } catch {
+      // Nada a fazer.
+    }
   }, []);
 
   const alterarSenha = useCallback((senhaAtual: string, senhaNova: string): boolean => {
     if (senhaAtual === senha && senhaNova.length >= 4) {
       setSenha(senhaNova);
-      localStorage.setItem("venezia_senha", senhaNova);
+      try {
+        localStorage.setItem("venezia_senha", senhaNova);
+      } catch {
+        // Mantém em memória se o navegador bloquear storage.
+      }
       return true;
     }
     return false;
@@ -123,12 +155,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const addLog = useCallback((entry: Omit<LogEntry, "id" | "data">) => {
     const newEntry: LogEntry = {
       ...entry,
-      id: crypto.randomUUID(),
+      id: safeRandomId(),
       data: new Date().toISOString(),
     };
     setLog((prev) => {
       const updated = [newEntry, ...prev].slice(0, 100);
-      localStorage.setItem("venezia_log", JSON.stringify(updated));
+      try {
+        localStorage.setItem("venezia_log", JSON.stringify(updated));
+        window.dispatchEvent(new Event("venezia-log-update"));
+      } catch {
+        // Mantém em memória se storage estiver indisponível.
+      }
       return updated;
     });
   }, []);
@@ -136,7 +173,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const salvarDadosVenda = useCallback((unidadeId: string, dados: DadosVenda) => {
     setDadosVenda((prev) => {
       const updated = { ...prev, [unidadeId]: dados };
-      localStorage.setItem("venezia_dados_venda", JSON.stringify(updated));
+      try {
+        localStorage.setItem("venezia_dados_venda", JSON.stringify(updated));
+        window.dispatchEvent(new Event("venezia-dados-venda-update"));
+      } catch {
+        // Mantém em memória se storage estiver indisponível.
+      }
       return updated;
     });
   }, []);
@@ -144,12 +186,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const addProposta = useCallback((proposta: Omit<PropostaRegistro, "id" | "dataGeracao">) => {
     const newProposta: PropostaRegistro = {
       ...proposta,
-      id: crypto.randomUUID(),
+      id: safeRandomId(),
       dataGeracao: new Date().toISOString(),
     };
     setPropostas((prev) => {
       const updated = [newProposta, ...prev].slice(0, 200);
-      localStorage.setItem("venezia_propostas", JSON.stringify(updated));
+      try {
+        localStorage.setItem("venezia_propostas", JSON.stringify(updated));
+        window.dispatchEvent(new Event("venezia-propostas-update"));
+      } catch {
+        // Mantém em memória se storage estiver indisponível.
+      }
       return updated;
     });
   }, []);

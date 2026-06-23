@@ -109,3 +109,9 @@ temp/
 .webdev/
 
 .project-config.json
+
+# Dossiês e pacotes de apoio operacional
+Dossie_*.docx
+Dossie_*.zip
+*_Dossie_*.docx
+*_Dossie_*.zip

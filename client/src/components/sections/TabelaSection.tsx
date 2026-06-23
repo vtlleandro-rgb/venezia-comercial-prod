@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { UNIDADES, EMPREENDIMENTO, CONDICOES_COMERCIAIS, type UnidadeStatus, type Unidade } from "@/data/empreendimento";
 import { ArrowUpDown, Filter, CheckCircle2, Clock, XCircle, Lock, ShieldCheck, Settings } from "lucide-react";
@@ -38,6 +38,17 @@ const nextStatus: Record<UnidadeStatus, UnidadeStatus> = {
   vendido: "disponivel",
 };
 
+const getInitialStatuses = (): Record<string, UnidadeStatus> => {
+  const fallback = Object.fromEntries(UNIDADES.map((u) => [u.id, u.status])) as Record<string, UnidadeStatus>;
+  try {
+    const saved = localStorage.getItem("venezia_unidades_status");
+    return saved ? { ...fallback, ...JSON.parse(saved) } : fallback;
+  } catch {
+    localStorage.removeItem("venezia_unidades_status");
+    return fallback;
+  }
+};
+
 type SortKey = "numero" | "andar" | "area" | "valorVenda" | "precoM2";
 
 export default function TabelaSection() {
@@ -62,12 +73,18 @@ export default function TabelaSection() {
 
   // Estado local para controlar status das unidades
   const [unidadesStatus, setUnidadesStatus] = useState<Record<string, UnidadeStatus>>(
-    () => {
-      const saved = localStorage.getItem("venezia_unidades_status");
-      if (saved) return JSON.parse(saved);
-      return Object.fromEntries(UNIDADES.map((u) => [u.id, u.status]));
-    }
+    getInitialStatuses
   );
+
+  useEffect(() => {
+    const syncStatuses = () => setUnidadesStatus(getInitialStatuses());
+    window.addEventListener("storage", syncStatuses);
+    window.addEventListener("venezia-status-update", syncStatuses);
+    return () => {
+      window.removeEventListener("storage", syncStatuses);
+      window.removeEventListener("venezia-status-update", syncStatuses);
+    };
+  }, []);
 
   const unidadesComStatus: Unidade[] = useMemo(
     () => UNIDADES.map((u) => ({ ...u, status: unidadesStatus[u.id] || u.status })),
@@ -96,13 +113,14 @@ export default function TabelaSection() {
 
   const executeStatusChange = useCallback((id: string, forceStatus?: UnidadeStatus) => {
     setUnidadesStatus((prev) => {
-      const newStatus = forceStatus || nextStatus[prev[id]];
+      const currentStatus = prev[id] || "disponivel";
+      const newStatus = forceStatus || nextStatus[currentStatus];
       const unidade = UNIDADES.find((u) => u.id === id);
       
       // Registrar no log
       addLog({
         unidade: unidade?.numero || id,
-        statusAnterior: prev[id],
+        statusAnterior: currentStatus,
         statusNovo: newStatus,
         usuario: "Administrador",
       });

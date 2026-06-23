@@ -155,9 +155,26 @@ export default function VendaModal({ open, onOpenChange, unidade, onConfirm }: V
     setPercentEntrada(values[0]);
   }, []);
 
+  const validarCamposProposta = useCallback(() => {
+    if (!comprador.trim()) {
+      toast.error("Preencha o nome do comprador antes de gerar a proposta.");
+      return false;
+    }
+    if (!imobiliaria.trim() || !corretor.trim()) {
+      toast.error("Preencha Imobiliária e Corretor antes de gerar a proposta.");
+      return false;
+    }
+    if (!dataAssinatura) {
+      toast.error("Preencha a data da assinatura antes de gerar a proposta.");
+      return false;
+    }
+    return true;
+  }, [comprador, imobiliaria, corretor, dataAssinatura]);
+
   // Gerar proposta comercial em PDF com assinatura digital
   const gerarPropostaPDF = useCallback(() => {
     if (!unidade) return;
+    if (!validarCamposProposta()) return;
     const dataFormatada = dataAssinatura
       ? new Date(dataAssinatura + "T12:00:00").toLocaleDateString("pt-BR")
       : new Date().toLocaleDateString("pt-BR");
@@ -276,7 +293,7 @@ ${aceiteDigital ? `<div class="aceite"><h4>Aceite Digital do Comprador</h4><p>De
     } else {
       toast.error("Bloqueador de pop-ups ativo. Permita pop-ups para gerar o PDF.");
     }
-  }, [unidade, comprador, cpf, telefone, imobiliaria, corretor, dataAssinatura, tipoValor, valorBase, valorEntrada, fgtsValue, valorFinanciamento, percentEntrada, percentFinanc, observacoes, aceiteDigital, parcelas, addProposta, condicaoEntrada, numParcelas, valorParcelaEntrada]);
+  }, [unidade, validarCamposProposta, comprador, cpf, telefone, imobiliaria, corretor, dataAssinatura, tipoValor, valorBase, valorEntrada, fgtsValue, valorFinanciamento, percentEntrada, percentFinanc, observacoes, aceiteDigital, parcelas, addProposta, condicaoEntrada, numParcelas, valorParcelaEntrada]);
 
   // Gerar HTML da proposta para link compartilhável
   const gerarHtmlPropostaLink = useCallback(() => {
@@ -347,6 +364,7 @@ ${observacoes ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br>${o
   // Enviar proposta por e-mail com link da proposta
   const enviarEmail = useCallback(() => {
     if (!unidade) return;
+    if (!validarCamposProposta()) return;
 
     // Gerar proposta em nova aba (link compartilh\u00e1vel)
     const htmlProposta = gerarHtmlPropostaLink();
@@ -408,7 +426,7 @@ www.arteaempreendimentos.com.br
       window.open(`mailto:?subject=${assunto}&body=${corpo}`, "_self");
       toast.success("Proposta aberta em nova aba + e-mail pronto para envio!");
     }, 600);
-  }, [unidade, comprador, tipoValor, valorBase, percentEntrada, valorEntrada, fgtsValue, valorFinanciamento, percentFinanc, imobiliaria, corretor, dataAssinatura, observacoes, parcelas, condicaoEntrada, numParcelas, valorParcelaEntrada, gerarHtmlPropostaLink]);
+  }, [unidade, validarCamposProposta, comprador, tipoValor, valorBase, percentEntrada, valorEntrada, fgtsValue, valorFinanciamento, percentFinanc, imobiliaria, corretor, dataAssinatura, observacoes, parcelas, condicaoEntrada, numParcelas, valorParcelaEntrada, gerarHtmlPropostaLink]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
