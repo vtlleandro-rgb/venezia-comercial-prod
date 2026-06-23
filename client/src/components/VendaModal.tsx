@@ -44,6 +44,14 @@ const formatPhone = (value: string): string => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
 type TipoValor = "sem_doc" | "com_doc";
 
 // Simulação de parcelas CEF (Price simplificado)
@@ -178,6 +186,14 @@ export default function VendaModal({ open, onOpenChange, unidade, onConfirm }: V
     const dataFormatada = dataAssinatura
       ? new Date(dataAssinatura + "T12:00:00").toLocaleDateString("pt-BR")
       : new Date().toLocaleDateString("pt-BR");
+    const compradorHtml = escapeHtml(comprador.trim() || "—");
+    const cpfHtml = escapeHtml(cpf || "—");
+    const telefoneHtml = escapeHtml(telefone || "—");
+    const imobiliariaHtml = escapeHtml(imobiliaria.trim() || "—");
+    const corretorHtml = escapeHtml(corretor.trim() || "—");
+    const observacoesHtml = observacoes.trim()
+      ? escapeHtml(observacoes.trim()).replace(/\n/g, "<br>")
+      : "";
 
     // Registrar proposta no histórico
     addProposta({
@@ -244,11 +260,11 @@ body{font-family:'Georgia',serif;color:#1a1a2e;line-height:1.6;padding:40px}
 </div></div>
 <div class="section"><div class="section-title">Dados do Comprador</div>
 <div class="info-grid">
-<div class="info-item"><span class="label">Comprador:</span><span class="value">${comprador || "—"}</span></div>
-<div class="info-item"><span class="label">CPF:</span><span class="value">${cpf || "—"}</span></div>
-<div class="info-item"><span class="label">Telefone:</span><span class="value">${telefone || "—"}</span></div>
-<div class="info-item"><span class="label">Imobiliária:</span><span class="value">${imobiliaria || "—"}</span></div>
-<div class="info-item"><span class="label">Corretor:</span><span class="value">${corretor || "—"}</span></div>
+<div class="info-item"><span class="label">Comprador:</span><span class="value">${compradorHtml}</span></div>
+<div class="info-item"><span class="label">CPF:</span><span class="value">${cpfHtml}</span></div>
+<div class="info-item"><span class="label">Telefone:</span><span class="value">${telefoneHtml}</span></div>
+<div class="info-item"><span class="label">Imobiliária:</span><span class="value">${imobiliariaHtml}</span></div>
+<div class="info-item"><span class="label">Corretor:</span><span class="value">${corretorHtml}</span></div>
 <div class="info-item"><span class="label">Data Assinatura:</span><span class="value">${dataFormatada}</span></div>
 </div></div>
 <div class="section"><div class="section-title">Composição Financeira</div>
@@ -277,9 +293,9 @@ body{font-family:'Georgia',serif;color:#1a1a2e;line-height:1.6;padding:40px}
 <tr><td>Vaga de Garagem</td><td>1 vaga coberta</td></tr>
 <tr><td>Sacada</td><td>Com churrasqueira</td></tr>
 </tbody></table></div>
-${observacoes ? `<div class="obs"><strong>Observações / Condições Especiais:</strong><br>${observacoes.replace(/\n/g, "<br>")}</div>` : ""}
+${observacoesHtml ? `<div class="obs"><strong>Observações / Condições Especiais:</strong><br>${observacoesHtml}</div>` : ""}
 ${aceiteDigital ? `<div class="aceite"><h4>Aceite Digital do Comprador</h4><p>Declaro que li e concordo com os termos desta proposta comercial. Estou ciente dos valores, condições de pagamento e características do imóvel descritos acima.</p><div class="check">✓ Aceite registrado digitalmente em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div></div>` : ""}
-<div class="signatures"><div class="sig-line">Comprador<br><small>${comprador || "_______________"}</small></div><div class="sig-line">Vendedor / Corretor<br><small>${corretor || "_______________"}</small></div></div>
+<div class="signatures"><div class="sig-line">Comprador<br><small>${compradorHtml === "—" ? "_______________" : compradorHtml}</small></div><div class="sig-line">Vendedor / Corretor<br><small>${corretorHtml === "—" ? "_______________" : corretorHtml}</small></div></div>
 <div class="footer"><p>Residencial Venezia — ARTEÁ Empreendimentos</p><p>Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p>
 <p>Proposta gerada em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} | Válida por 7 dias</p></div>
 </body></html>`;
@@ -301,6 +317,14 @@ ${aceiteDigital ? `<div class="aceite"><h4>Aceite Digital do Comprador</h4><p>De
     const dataFormatada = dataAssinatura
       ? new Date(dataAssinatura + "T12:00:00").toLocaleDateString("pt-BR")
       : new Date().toLocaleDateString("pt-BR");
+    const compradorHtml = escapeHtml(comprador.trim() || "—");
+    const cpfHtml = escapeHtml(cpf || "—");
+    const telefoneHtml = escapeHtml(telefone || "—");
+    const imobiliariaHtml = escapeHtml(imobiliaria.trim() || "—");
+    const corretorHtml = escapeHtml(corretor.trim() || "—");
+    const observacoesHtml = observacoes.trim()
+      ? escapeHtml(observacoes.trim()).replace(/\n/g, "<br>")
+      : "";
     return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Proposta Comercial - Unidade ${unidade.numero} - Residencial Venezia</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a2e;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;background:#fff}
 .header{text-align:center;border-bottom:2px solid #c62828;padding-bottom:20px;margin-bottom:30px}
@@ -327,11 +351,11 @@ tr:nth-child(even){background:#f9f9f9}.total td{font-weight:bold;background:#f0f
 </style></head><body>
 <div class="header"><h1>VENEZIA</h1><h2>Residencial</h2><p class="date">Proposta Comercial | ${dataFormatada}</p></div>
 <div class="section"><div class="section-title">Dados do Comprador</div><div class="grid">
-<div class="item"><span class="l">Comprador:</span><span class="v">${comprador || "\u2014"}</span></div>
-<div class="item"><span class="l">CPF:</span><span class="v">${cpf || "\u2014"}</span></div>
-<div class="item"><span class="l">Telefone:</span><span class="v">${telefone || "\u2014"}</span></div>
-<div class="item"><span class="l">Imobili\u00e1ria:</span><span class="v">${imobiliaria || "\u2014"}</span></div>
-<div class="item"><span class="l">Corretor:</span><span class="v">${corretor || "\u2014"}</span></div>
+<div class="item"><span class="l">Comprador:</span><span class="v">${compradorHtml}</span></div>
+<div class="item"><span class="l">CPF:</span><span class="v">${cpfHtml}</span></div>
+<div class="item"><span class="l">Telefone:</span><span class="v">${telefoneHtml}</span></div>
+<div class="item"><span class="l">Imobili\u00e1ria:</span><span class="v">${imobiliariaHtml}</span></div>
+<div class="item"><span class="l">Corretor:</span><span class="v">${corretorHtml}</span></div>
 <div class="item"><span class="l">Data:</span><span class="v">${dataFormatada}</span></div>
 </div></div>
 <div class="section"><div class="section-title">Im\u00f3vel</div><div class="grid">
@@ -355,7 +379,7 @@ tr:nth-child(even){background:#f9f9f9}.total td{font-weight:bold;background:#f0f
 <div><div class="prazo">300 meses (25 anos)</div><div class="pval">${formatCurrency(parcelas.p300)}/m\u00eas</div></div>
 <div><div class="prazo">240 meses (20 anos)</div><div class="pval">${formatCurrency(parcelas.p240)}/m\u00eas</div></div>
 </div></div></div>
-${observacoes ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br>${observacoes.replace(/\n/g, "<br>")}</div>` : ""}
+${observacoesHtml ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br>${observacoesHtml}</div>` : ""}
 <div class="footer"><p><strong>Residencial Venezia</strong> \u2014 ARTE\u00c1 Empreendimentos</p><p>Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p><p>www.arteaempreendimentos.com.br</p><p style="margin-top:8px">Proposta v\u00e1lida por 7 dias | Gerada em ${new Date().toLocaleDateString("pt-BR")} \u00e0s ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p></div>
 <div class="actions"><button class="btn btn-print" onclick="window.print()">Imprimir / Salvar PDF</button>${telefone ? "<a class=\"btn btn-whats\" href=\"https://wa.me/55" + telefone.replace(/\D/g, "") + "?text=" + encodeURIComponent("Ol\u00e1 " + (comprador || "") + "! Segue sua proposta comercial do Residencial Venezia - Unidade " + unidade.numero + ". Valor: " + formatCurrency(valorBase) + ". Entrada: " + formatCurrency(valorEntrada) + " (" + (condicaoEntrada === "parcelada" ? numParcelas + "x de " + formatCurrency(valorParcelaEntrada) : "\u00c0 Vista") + "). Financiamento: " + formatCurrency(valorFinanciamento) + ". Qualquer d\u00favida estou \u00e0 disposi\u00e7\u00e3o!") + "\" target=\"_blank\">Enviar via WhatsApp</a>" : ""}</div>
 </body></html>`;
