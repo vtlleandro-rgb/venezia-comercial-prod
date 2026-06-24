@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Home,
   Building2,
@@ -12,8 +12,10 @@ import {
   Image,
   Shield,
   BarChart3,
+  Users,
 } from "lucide-react";
 import { IMAGENS } from "@/data/empreendimento";
+import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
 
 const navItems: Array<{ id: string; label: string; icon: any; isRestricted?: boolean }> = [
   { id: "home", label: "Início", icon: Home },
@@ -31,38 +33,8 @@ const navItems: Array<{ id: string; label: string; icon: any; isRestricted?: boo
 export default function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
-  const [reservasPendentes, setReservasPendentes] = useState(0);
-
-  // Monitorar reservas pendentes via localStorage
-  useEffect(() => {
-    const checkReservas = () => {
-      try {
-        const statusData = localStorage.getItem("venezia_unidades_status");
-        if (statusData) {
-          const statuses = JSON.parse(statusData) as Record<string, string>;
-          const count = Object.values(statuses).filter((s) => s === "reservado").length;
-          setReservasPendentes(count);
-        } else {
-          setReservasPendentes(0);
-        }
-      } catch {
-        setReservasPendentes(0);
-      }
-    };
-
-    checkReservas();
-    // Escutar mudanças no localStorage (de outras abas) e custom event
-    window.addEventListener("storage", checkReservas);
-    window.addEventListener("venezia-status-update", checkReservas);
-    // Polling leve a cada 2s para capturar mudanças na mesma aba
-    const interval = setInterval(checkReservas, 2000);
-
-    return () => {
-      window.removeEventListener("storage", checkReservas);
-      window.removeEventListener("venezia-status-update", checkReservas);
-      clearInterval(interval);
-    };
-  }, []);
+  const { unidadesStatus } = useUnidadesStatus();
+  const reservasPendentes = Object.values(unidadesStatus).filter((status) => status === "reservado").length;
 
   const scrollToSection = (id: string) => {
     // Acesso Restrito redireciona para a seção tabela
@@ -97,13 +69,9 @@ export default function Navigation() {
           <img
             src={IMAGENS.logoVenezia}
             alt="Residencial Venezia"
-            className="h-16 w-auto"
+            className="h-14 w-auto brightness-0 invert"
           />
-          <img
-            src={IMAGENS.logoArtea}
-            alt="ARTEÁ Empreendimentos"
-            className="h-9 w-auto opacity-90"
-          />
+          <span className="text-[10px] text-white/50 tracking-widest uppercase text-center leading-tight">SPE-VENEZIA<br/>Empreendimentos Imobiliários</span>
         </div>
 
         {/* Nav Items */}
@@ -141,6 +109,24 @@ export default function Navigation() {
               </div>
             );
           })}
+        </div>
+
+        {/* Links Área Restrita */}
+        <div className="px-4 pb-2 space-y-1">
+          <a
+            href="/corretor"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+          >
+            <Users size={16} />
+            Meu Painel (Corretor)
+          </a>
+          <a
+            href="/admin/corretores"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+          >
+            <Users size={16} />
+            Gestão de Corretores
+          </a>
         </div>
 
         {/* Footer */}

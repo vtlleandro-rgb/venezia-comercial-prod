@@ -1,22 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-
-// Senha padrão de acesso restrito
-const SENHA_PADRAO = "venezia2025";
-
-const safeRandomId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-function readJsonStorage<T>(key: string, fallback: T): T {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) as T : fallback;
-  } catch {
-    localStorage.removeItem(key);
-    return fallback;
-  }
-}
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { trpc } from "@/lib/trpc";
 
 export interface LogEntry {
   id: string;
@@ -26,6 +9,8 @@ export interface LogEntry {
   usuario: string;
   data: string;
   detalhes?: string;
+  tipo?: "reserva" | "cancelamento" | "venda" | "distrato" | "alteracao";
+  motivo?: string;
 }
 
 export interface DadosVenda {
@@ -40,6 +25,17 @@ export interface DadosVenda {
   fgts: number;
   entrada: number;
   observacoes?: string;
+}
+
+export interface CancelamentoReserva {
+  id: string;
+  unidadeId: string;
+  unidadeNumero: string;
+  motivo: string;
+  observacoes?: string;
+  usuario: string;
+  data: string;
+  dadosReservaAnterior?: DadosVenda;
 }
 
 export interface PropostaRegistro {
@@ -62,147 +58,168 @@ export interface PropostaRegistro {
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  authenticate: (senha: string) => boolean;
   logout: () => void;
-  senha: string;
-  alterarSenha: (senhaAtual: string, senhaNova: string) => boolean;
   log: LogEntry[];
   addLog: (entry: Omit<LogEntry, "id" | "data">) => void;
   dadosVenda: Record<string, DadosVenda>;
   salvarDadosVenda: (unidadeId: string, dados: DadosVenda) => void;
+  cancelamentos: CancelamentoReserva[];
+  addCancelamento: (cancelamento: Omit<CancelamentoReserva, "id" | "data">) => void;
   propostas: PropostaRegistro[];
   addProposta: (proposta: Omit<PropostaRegistro, "id" | "dataGeracao">) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
-  authenticate: () => false,
   logout: () => {},
-  senha: SENHA_PADRAO,
-  alterarSenha: () => false,
   log: [],
   addLog: () => {},
   dadosVenda: {},
   salvarDadosVenda: () => {},
+  cancelamentos: [],
+  addCancelamento: () => {},
   propostas: [],
   addProposta: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem("venezia_auth") === "true";
-    } catch {
-      return false;
-    }
+  const utils = trpc.useUtils();
+  const meQuery = trpc.auth.me.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const isAuthenticated = Boolean(meQuery.data);
+
+  const [log, setLog] = useState<LogEntry[]>([]);
+  const [dadosVenda, setDadosVenda] = useState<Record<string, DadosVenda>>({});
+  const [cancelamentos, setCancelamentos] = useState<CancelamentoReserva[]>([]);
+  const [propostas, setPropostas] = useState<PropostaRegistro[]>([]);
+
+  const snapshotQuery = trpc.comercial.snapshot.useQuery(undefined, { enabled: isAuthenticated, retry: false });
+  const addLogMutation = trpc.comercial.addLog.useMutation();
+  const salvarVendaMutation = trpc.comercial.salvarVenda.useMutation();
+  const addCancelamentoMutation = trpc.comercial.addCancelamento.useMutation();
+  const addPropostaComercialMutation = trpc.comercial.addPropostaComercial.useMutation();
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSettled: async () => {
+      utils.auth.me.setData(undefined, null);
+      await utils.auth.me.invalidate();
+    },
   });
 
-  const [senha, setSenha] = useState<string>(() => {
-    try {
-      return localStorage.getItem("venezia_senha") || SENHA_PADRAO;
-    } catch {
-      return SENHA_PADRAO;
-    }
-  });
+  useEffect(() => {
+    const snapshot = snapshotQuery.data;
+    if (!snapshot) return;
 
-  const [log, setLog] = useState<LogEntry[]>(() => {
-    return readJsonStorage<LogEntry[]>("venezia_log", []);
-  });
+    setLog(snapshot.logs.map((item) => ({
+      id: item.id,
+      unidade: item.unidade,
+      statusAnterior: item.statusAnterior,
+      statusNovo: item.statusNovo,
+      usuario: item.usuario,
+      data: new Date(item.data).toISOString(),
+      detalhes: item.detalhes ?? undefined,
+      tipo: item.tipo as LogEntry["tipo"] | undefined,
+      motivo: item.motivo ?? undefined,
+    })));
 
-  const [dadosVenda, setDadosVenda] = useState<Record<string, DadosVenda>>(() => {
-    return readJsonStorage<Record<string, DadosVenda>>("venezia_dados_venda", {});
-  });
+    setDadosVenda(Object.fromEntries(snapshot.vendas.map((item) => [item.unidadeId, {
+      comprador: item.comprador,
+      cpf: item.cpf ?? undefined,
+      telefone: item.telefone ?? undefined,
+      imobiliaria: item.imobiliaria,
+      corretor: item.corretor,
+      dataAssinatura: item.dataAssinatura,
+      valorSemDocumentacao: item.valorSemDocumentacao,
+      valorFinanciamento: item.valorFinanciamento,
+      fgts: item.fgts,
+      entrada: item.entrada,
+      observacoes: item.observacoes ?? undefined,
+    }])));
 
-  const [propostas, setPropostas] = useState<PropostaRegistro[]>(() => {
-    return readJsonStorage<PropostaRegistro[]>("venezia_propostas", []);
-  });
+    setCancelamentos(snapshot.cancelamentos.map((item) => ({
+      id: item.id,
+      unidadeId: item.unidadeId,
+      unidadeNumero: item.unidadeNumero,
+      motivo: item.motivo,
+      observacoes: item.observacoes ?? undefined,
+      usuario: item.usuario,
+      data: new Date(item.data).toISOString(),
+      dadosReservaAnterior: item.dadosReservaAnterior ? JSON.parse(item.dadosReservaAnterior) : undefined,
+    })));
 
-  const authenticate = useCallback((inputSenha: string): boolean => {
-    if (inputSenha === senha) {
-      setIsAuthenticated(true);
-      try {
-        sessionStorage.setItem("venezia_auth", "true");
-      } catch {
-        // Sessão ainda funciona em memória.
-      }
-      return true;
-    }
-    return false;
-  }, [senha]);
+    setPropostas(snapshot.propostasComerciais.map((item) => ({
+      id: item.id,
+      unidadeId: item.unidadeId,
+      unidadeNumero: item.unidadeNumero,
+      comprador: item.comprador,
+      cpf: item.cpf ?? undefined,
+      telefone: item.telefone ?? undefined,
+      imobiliaria: item.imobiliaria,
+      corretor: item.corretor,
+      valorBase: item.valorBase,
+      tipoValor: item.tipoValor,
+      entrada: item.entrada,
+      financiamento: item.financiamento,
+      fgts: item.fgts,
+      observacoes: item.observacoes ?? undefined,
+      dataGeracao: new Date(item.dataGeracao).toISOString(),
+    })));
+  }, [snapshotQuery.data]);
 
   const logout = useCallback(() => {
-    setIsAuthenticated(false);
-    try {
-      sessionStorage.removeItem("venezia_auth");
-    } catch {
-      // Nada a fazer.
-    }
-  }, []);
-
-  const alterarSenha = useCallback((senhaAtual: string, senhaNova: string): boolean => {
-    if (senhaAtual === senha && senhaNova.length >= 4) {
-      setSenha(senhaNova);
-      try {
-        localStorage.setItem("venezia_senha", senhaNova);
-      } catch {
-        // Mantém em memória se o navegador bloquear storage.
-      }
-      return true;
-    }
-    return false;
-  }, [senha]);
+    logoutMutation.mutate();
+  }, [logoutMutation]);
 
   const addLog = useCallback((entry: Omit<LogEntry, "id" | "data">) => {
     const newEntry: LogEntry = {
       ...entry,
-      id: safeRandomId(),
+      id: crypto.randomUUID(),
       data: new Date().toISOString(),
     };
     setLog((prev) => {
-      const updated = [newEntry, ...prev].slice(0, 100);
-      try {
-        localStorage.setItem("venezia_log", JSON.stringify(updated));
-        window.dispatchEvent(new Event("venezia-log-update"));
-      } catch {
-        // Mantém em memória se storage estiver indisponível.
-      }
+      const updated = [newEntry, ...prev].slice(0, 200);
+      addLogMutation.mutate(entry);
       return updated;
     });
-  }, []);
+  }, [addLogMutation]);
 
   const salvarDadosVenda = useCallback((unidadeId: string, dados: DadosVenda) => {
     setDadosVenda((prev) => {
       const updated = { ...prev, [unidadeId]: dados };
-      try {
-        localStorage.setItem("venezia_dados_venda", JSON.stringify(updated));
-        window.dispatchEvent(new Event("venezia-dados-venda-update"));
-      } catch {
-        // Mantém em memória se storage estiver indisponível.
-      }
+      salvarVendaMutation.mutate({ unidadeId, ...dados });
       return updated;
     });
-  }, []);
+  }, [salvarVendaMutation]);
+
+  const addCancelamento = useCallback((cancelamento: Omit<CancelamentoReserva, "id" | "data">) => {
+    const newCancelamento: CancelamentoReserva = {
+      ...cancelamento,
+      id: crypto.randomUUID(),
+      data: new Date().toISOString(),
+    };
+    setCancelamentos((prev) => {
+      const updated = [newCancelamento, ...prev].slice(0, 200);
+      addCancelamentoMutation.mutate(cancelamento);
+      return updated;
+    });
+  }, [addCancelamentoMutation]);
 
   const addProposta = useCallback((proposta: Omit<PropostaRegistro, "id" | "dataGeracao">) => {
     const newProposta: PropostaRegistro = {
       ...proposta,
-      id: safeRandomId(),
+      id: crypto.randomUUID(),
       dataGeracao: new Date().toISOString(),
     };
     setPropostas((prev) => {
       const updated = [newProposta, ...prev].slice(0, 200);
-      try {
-        localStorage.setItem("venezia_propostas", JSON.stringify(updated));
-        window.dispatchEvent(new Event("venezia-propostas-update"));
-      } catch {
-        // Mantém em memória se storage estiver indisponível.
-      }
+      addPropostaComercialMutation.mutate(proposta);
       return updated;
     });
-  }, []);
+  }, [addPropostaComercialMutation]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, authenticate, logout, senha, alterarSenha, log, addLog, dadosVenda, salvarDadosVenda, propostas, addProposta }}>
+    <AuthContext.Provider value={{ isAuthenticated, logout, log, addLog, dadosVenda, salvarDadosVenda, cancelamentos, addCancelamento, propostas, addProposta }}>
       {children}
     </AuthContext.Provider>
   );

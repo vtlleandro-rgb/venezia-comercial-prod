@@ -1,11 +1,13 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
 import { UNIDADES, EMPREENDIMENTO, CONDICOES_COMERCIAIS, type UnidadeStatus, type Unidade } from "@/data/empreendimento";
-import { ArrowUpDown, Filter, CheckCircle2, Clock, XCircle, Lock, ShieldCheck, Settings } from "lucide-react";
+import { ArrowUpDown, Filter, CheckCircle2, Clock, XCircle, Lock, ShieldCheck, Settings, AlertTriangle } from "lucide-react";
 import { useAuth, type DadosVenda } from "@/contexts/AuthContext";
 import PasswordModal from "@/components/PasswordModal";
 import VendaModal from "@/components/VendaModal";
 import AdminPanel from "@/components/AdminPanel";
+import CancelamentoModal from "@/components/CancelamentoModal";
 import { toast } from "sonner";
 
 const formatCurrency = (value: number) =>
@@ -38,22 +40,18 @@ const nextStatus: Record<UnidadeStatus, UnidadeStatus> = {
   vendido: "disponivel",
 };
 
-const getInitialStatuses = (): Record<string, UnidadeStatus> => {
-  const fallback = Object.fromEntries(UNIDADES.map((u) => [u.id, u.status])) as Record<string, UnidadeStatus>;
-  try {
-    const saved = localStorage.getItem("venezia_unidades_status");
-    return saved ? { ...fallback, ...JSON.parse(saved) } : fallback;
-  } catch {
-    localStorage.removeItem("venezia_unidades_status");
-    return fallback;
-  }
+// Status reverso: permite voltar de reservado para disponível
+const prevStatus: Record<UnidadeStatus, UnidadeStatus> = {
+  disponivel: "disponivel",
+  reservado: "disponivel",
+  vendido: "reservado",
 };
 
 type SortKey = "numero" | "andar" | "area" | "valorVenda" | "precoM2";
 
 export default function TabelaSection() {
   const { ref, isVisible } = useScrollAnimation();
-  const { isAuthenticated, logout, addLog, salvarDadosVenda } = useAuth();
+  const { isAuthenticated, logout, addLog, salvarDadosVenda, addCancelamento, dadosVenda } = useAuth();
   const [sortKey, setSortKey] = useState<SortKey>("andar");
   const [sortAsc, setSortAsc] = useState(true);
   const [filterAndar, setFilterAndar] = useState<number | null>(null);
@@ -71,20 +69,12 @@ export default function TabelaSection() {
   // Admin panel
   const [showAdmin, setShowAdmin] = useState(false);
 
-  // Estado local para controlar status das unidades
-  const [unidadesStatus, setUnidadesStatus] = useState<Record<string, UnidadeStatus>>(
-    getInitialStatuses
-  );
+  // Modal de cancelamento de reserva
+  const [showCancelamentoModal, setShowCancelamentoModal] = useState(false);
+  const [cancelamentoUnidade, setCancelamentoUnidade] = useState<Unidade | null>(null);
 
-  useEffect(() => {
-    const syncStatuses = () => setUnidadesStatus(getInitialStatuses());
-    window.addEventListener("storage", syncStatuses);
-    window.addEventListener("venezia-status-update", syncStatuses);
-    return () => {
-      window.removeEventListener("storage", syncStatuses);
-      window.removeEventListener("venezia-status-update", syncStatuses);
-    };
-  }, []);
+  // Estado sincronizado entre módulos
+  const { unidadesStatus, updateStatus } = useUnidadesStatus();
 
   const unidadesComStatus: Unidade[] = useMemo(
     () => UNIDADES.map((u) => ({ ...u, status: unidadesStatus[u.id] || u.status })),
@@ -112,26 +102,23 @@ export default function TabelaSection() {
   };
 
   const executeStatusChange = useCallback((id: string, forceStatus?: UnidadeStatus) => {
-    setUnidadesStatus((prev) => {
-      const currentStatus = prev[id] || "disponivel";
-      const newStatus = forceStatus || nextStatus[currentStatus];
-      const unidade = UNIDADES.find((u) => u.id === id);
-      
-      // Registrar no log
-      addLog({
-        unidade: unidade?.numero || id,
-        statusAnterior: currentStatus,
-        statusNovo: newStatus,
-        usuario: "Administrador",
-      });
-
-      toast.success(`Unidade ${unidade?.numero} alterada para ${statusLabels[newStatus]}`);
-      const updated = { ...prev, [id]: newStatus };
-      localStorage.setItem("venezia_unidades_status", JSON.stringify(updated));
-      window.dispatchEvent(new Event("venezia-status-update"));
-      return updated;
+    const newStatus = forceStatus || nextStatus[unidadesStatus[id]];
+    const unidade = UNIDADES.find((u) => u.id === id);
+    
+    // Registrar no log
+    addLog({
+      unidade: unidade?.numero || id,
+      statusAnterior: unidadesStatus[id],
+      statusNovo: newStatus,
+      usuario: "Administrador",
     });
-  }, [addLog]);
+
+    updateStatus(id, newStatus);
+    toast.success(`Unidade ${unidade?.numero} alterada para ${statusLabels[newStatus]}`);
+  }, [addLog, unidadesStatus, updateStatus]);
+
+  // Estado para menu de contexto ao clicar em reservado
+  const [showStatusMenu, setShowStatusMenu] = useState<string | null>(null);
 
   const handleStatusChange = (id: string) => {
     if (!isAuthenticated) {
@@ -141,6 +128,13 @@ export default function TabelaSection() {
     }
 
     const currentStatus = unidadesStatus[id];
+
+    // Se está reservado, mostrar menu com opções: Vender ou Tornar Disponível
+    if (currentStatus === "reservado") {
+      setShowStatusMenu(showStatusMenu === id ? null : id);
+      return;
+    }
+
     const newStatus = nextStatus[currentStatus];
 
     // Se vai para "vendido", abrir modal de fechamento de venda
@@ -152,6 +146,56 @@ export default function TabelaSection() {
     } else {
       executeStatusChange(id);
     }
+  };
+
+  const handleRevertToDisponivel = (id: string) => {
+    setShowStatusMenu(null);
+    const unidade = unidadesComStatus.find((u) => u.id === id);
+    if (unidade) {
+      setCancelamentoUnidade(unidade);
+      setShowCancelamentoModal(true);
+    }
+  };
+
+  const handleCancelamentoConfirm = (motivo: string, observacoes: string) => {
+    if (!cancelamentoUnidade) return;
+    const id = cancelamentoUnidade.id;
+
+    // Registrar cancelamento no histórico
+    addCancelamento({
+      unidadeId: id,
+      unidadeNumero: cancelamentoUnidade.numero,
+      motivo,
+      observacoes: observacoes || undefined,
+      usuario: "Administrador",
+      dadosReservaAnterior: dadosVenda[id] || undefined,
+    });
+
+    // Registrar no log
+    addLog({
+      unidade: cancelamentoUnidade.numero,
+      statusAnterior: "reservado",
+      statusNovo: "disponivel",
+      usuario: "Administrador",
+      tipo: "cancelamento",
+      motivo,
+      detalhes: `Motivo: ${motivo}${observacoes ? ` | Obs: ${observacoes}` : ""}`,
+    });
+
+    // Alterar status para disponível
+    updateStatus(id, "disponivel");
+
+    toast.success(`Reserva da unidade ${cancelamentoUnidade.numero} cancelada com sucesso`);
+    setShowCancelamentoModal(false);
+    setCancelamentoUnidade(null);
+  };
+
+  const handleAdvanceToVendido = (id: string) => {
+    setShowStatusMenu(null);
+    const unidade = unidadesComStatus.find((u) => u.id === id);
+    setVendaUnidade(unidade || null);
+    setVendaPendingId(id);
+    setShowVendaModal(true);
   };
 
   const handleVendaConfirm = (dados: DadosVenda) => {
@@ -168,12 +212,7 @@ export default function TabelaSection() {
         detalhes: `Comprador: ${dados.comprador} | Corretor: ${dados.corretor} | Imob: ${dados.imobiliaria} | Data: ${dados.dataAssinatura}`,
       });
 
-      setUnidadesStatus((prev) => {
-        const updated = { ...prev, [vendaPendingId!]: "vendido" as UnidadeStatus };
-        localStorage.setItem("venezia_unidades_status", JSON.stringify(updated));
-        window.dispatchEvent(new Event("venezia-status-update"));
-        return updated;
-      });
+      updateStatus(vendaPendingId!, "vendido");
 
       toast.success(`Unidade ${unidade?.numero} — Venda registrada com sucesso!`);
       setVendaPendingId(null);
@@ -356,9 +395,14 @@ export default function TabelaSection() {
                   >
                     <td className="px-3 py-3 font-medium text-[#1a1a2e] whitespace-nowrap">
                       {unidade.numero}
+                      {unidade.observacao && (
+                        <span className="ml-1 text-[10px] font-normal text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                          {unidade.observacao}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-gray-600">{`${unidade.andar}º`}</td>
-                    <td className="px-3 py-3 text-gray-600">{unidade.area}</td>
+                    <td className="px-3 py-3 text-gray-600">{unidade.area.toFixed(2).replace('.', ',')}</td>
                     <td className="px-3 py-3 font-medium text-[#1a1a2e]">{formatCurrency(unidade.valorVenda)}</td>
                     <td className="px-3 py-3 font-medium text-[#1a1a2e]">{formatCurrency(unidade.valorComDocumentacao)}</td>
                     <td className="px-3 py-3 text-center text-gray-500 font-medium">4%</td>
@@ -368,7 +412,7 @@ export default function TabelaSection() {
                     <td className="px-3 py-3 text-[#c62828] font-semibold">{formatCurrencyDecimal(unidade.parcela36x)}</td>
                     <td className="px-3 py-3 text-gray-600">{formatCurrency(unidade.reforcoChaves)}</td>
                     <td className="px-3 py-3 text-gray-600">{formatCurrency(unidade.financCEF)}</td>
-                    <td className="px-3 py-3 text-center">
+                    <td className="px-3 py-3 text-center relative">
                       <button
                         onClick={() => handleStatusChange(unidade.id)}
                         className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium border transition-all duration-200 hover:scale-105 active:scale-95 ${statusColors[unidade.status]}`}
@@ -378,6 +422,25 @@ export default function TabelaSection() {
                         {statusLabels[unidade.status]}
                         {!isAuthenticated && <Lock size={10} className="ml-0.5 opacity-60" />}
                       </button>
+                      {/* Menu de contexto para unidades reservadas */}
+                      {showStatusMenu === unidade.id && unidade.status === "reservado" && (
+                        <div className="absolute right-2 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]">
+                          <button
+                            onClick={() => handleAdvanceToVendido(unidade.id)}
+                            className="w-full text-left px-4 py-2 text-xs hover:bg-red-50 text-red-700 flex items-center gap-2 transition-colors"
+                          >
+                            <XCircle size={12} />
+                            Registrar Venda
+                          </button>
+                          <button
+                            onClick={() => handleRevertToDisponivel(unidade.id)}
+                            className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 text-amber-700 flex items-center gap-2 transition-colors"
+                          >
+                            <AlertTriangle size={12} />
+                            Cancelar Reserva
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -451,6 +514,15 @@ export default function TabelaSection() {
         open={showAdmin}
         onOpenChange={setShowAdmin}
       />
+
+      {/* Cancelamento Modal */}
+      {showCancelamentoModal && cancelamentoUnidade && (
+        <CancelamentoModal
+          unidade={cancelamentoUnidade}
+          onConfirm={handleCancelamentoConfirm}
+          onClose={() => { setShowCancelamentoModal(false); setCancelamentoUnidade(null); }}
+        />
+      )}
     </section>
   );
 }

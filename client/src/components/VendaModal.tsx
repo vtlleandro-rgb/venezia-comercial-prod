@@ -44,14 +44,6 @@ const formatPhone = (value: string): string => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
-const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
 type TipoValor = "sem_doc" | "com_doc";
 
 // Simulação de parcelas CEF (Price simplificado)
@@ -163,37 +155,12 @@ export default function VendaModal({ open, onOpenChange, unidade, onConfirm }: V
     setPercentEntrada(values[0]);
   }, []);
 
-  const validarCamposProposta = useCallback(() => {
-    if (!comprador.trim()) {
-      toast.error("Preencha o nome do comprador antes de gerar a proposta.");
-      return false;
-    }
-    if (!imobiliaria.trim() || !corretor.trim()) {
-      toast.error("Preencha Imobiliária e Corretor antes de gerar a proposta.");
-      return false;
-    }
-    if (!dataAssinatura) {
-      toast.error("Preencha a data da assinatura antes de gerar a proposta.");
-      return false;
-    }
-    return true;
-  }, [comprador, imobiliaria, corretor, dataAssinatura]);
-
   // Gerar proposta comercial em PDF com assinatura digital
   const gerarPropostaPDF = useCallback(() => {
     if (!unidade) return;
-    if (!validarCamposProposta()) return;
     const dataFormatada = dataAssinatura
       ? new Date(dataAssinatura + "T12:00:00").toLocaleDateString("pt-BR")
       : new Date().toLocaleDateString("pt-BR");
-    const compradorHtml = escapeHtml(comprador.trim() || "—");
-    const cpfHtml = escapeHtml(cpf || "—");
-    const telefoneHtml = escapeHtml(telefone || "—");
-    const imobiliariaHtml = escapeHtml(imobiliaria.trim() || "—");
-    const corretorHtml = escapeHtml(corretor.trim() || "—");
-    const observacoesHtml = observacoes.trim()
-      ? escapeHtml(observacoes.trim()).replace(/\n/g, "<br>")
-      : "";
 
     // Registrar proposta no histórico
     addProposta({
@@ -256,15 +223,15 @@ body{font-family:'Georgia',serif;color:#1a1a2e;line-height:1.6;padding:40px}
 <div class="info-item"><span class="label">Data:</span><span class="value">${dataFormatada}</span></div>
 <div class="info-item"><span class="label">Unidade:</span><span class="value">${unidade.numero}</span></div>
 <div class="info-item"><span class="label">Andar:</span><span class="value">${unidade.andar}º Andar</span></div>
-<div class="info-item"><span class="label">Área Privativa:</span><span class="value">${unidade.area} m²</span></div>
+<div class="info-item"><span class="label">Área Privativa:</span><span class="value">${unidade.area.toFixed(2).replace('.', ',')} m²</span></div>
 </div></div>
 <div class="section"><div class="section-title">Dados do Comprador</div>
 <div class="info-grid">
-<div class="info-item"><span class="label">Comprador:</span><span class="value">${compradorHtml}</span></div>
-<div class="info-item"><span class="label">CPF:</span><span class="value">${cpfHtml}</span></div>
-<div class="info-item"><span class="label">Telefone:</span><span class="value">${telefoneHtml}</span></div>
-<div class="info-item"><span class="label">Imobiliária:</span><span class="value">${imobiliariaHtml}</span></div>
-<div class="info-item"><span class="label">Corretor:</span><span class="value">${corretorHtml}</span></div>
+<div class="info-item"><span class="label">Comprador:</span><span class="value">${comprador || "—"}</span></div>
+<div class="info-item"><span class="label">CPF:</span><span class="value">${cpf || "—"}</span></div>
+<div class="info-item"><span class="label">Telefone:</span><span class="value">${telefone || "—"}</span></div>
+<div class="info-item"><span class="label">Imobiliária:</span><span class="value">${imobiliaria || "—"}</span></div>
+<div class="info-item"><span class="label">Corretor:</span><span class="value">${corretor || "—"}</span></div>
 <div class="info-item"><span class="label">Data Assinatura:</span><span class="value">${dataFormatada}</span></div>
 </div></div>
 <div class="section"><div class="section-title">Composição Financeira</div>
@@ -285,7 +252,7 @@ body{font-family:'Georgia',serif;color:#1a1a2e;line-height:1.6;padding:40px}
 <div class="section"><div class="section-title">Informações do Imóvel</div>
 <table class="table"><thead><tr><th>Item</th><th>Detalhe</th></tr></thead><tbody>
 <tr><td>Tipologia</td><td>2 Suítes</td></tr>
-<tr><td>Área Privativa</td><td>${unidade.area} m²</td></tr>
+<tr><td>Área Privativa</td><td>${unidade.area.toFixed(2).replace('.', ',')} m²</td></tr>
 <tr><td>Andar</td><td>${unidade.andar}º Andar</td></tr>
 <tr><td>Valor s/ Documentação</td><td>${formatCurrency(unidade.valorVenda)}</td></tr>
 <tr><td>Valor c/ Documentação (4%)</td><td>${formatCurrency(unidade.valorComDocumentacao)}</td></tr>
@@ -293,10 +260,10 @@ body{font-family:'Georgia',serif;color:#1a1a2e;line-height:1.6;padding:40px}
 <tr><td>Vaga de Garagem</td><td>1 vaga coberta</td></tr>
 <tr><td>Sacada</td><td>Com churrasqueira</td></tr>
 </tbody></table></div>
-${observacoesHtml ? `<div class="obs"><strong>Observações / Condições Especiais:</strong><br>${observacoesHtml}</div>` : ""}
+${observacoes ? `<div class="obs"><strong>Observações / Condições Especiais:</strong><br>${observacoes.replace(/\n/g, "<br>")}</div>` : ""}
 ${aceiteDigital ? `<div class="aceite"><h4>Aceite Digital do Comprador</h4><p>Declaro que li e concordo com os termos desta proposta comercial. Estou ciente dos valores, condições de pagamento e características do imóvel descritos acima.</p><div class="check">✓ Aceite registrado digitalmente em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div></div>` : ""}
-<div class="signatures"><div class="sig-line">Comprador<br><small>${compradorHtml === "—" ? "_______________" : compradorHtml}</small></div><div class="sig-line">Vendedor / Corretor<br><small>${corretorHtml === "—" ? "_______________" : corretorHtml}</small></div></div>
-<div class="footer"><p>Residencial Venezia — ARTEÁ Empreendimentos</p><p>Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p>
+<div class="signatures"><div class="sig-line">Comprador<br><small>${comprador || "_______________"}</small></div><div class="sig-line">Vendedor / Corretor<br><small>${corretor || "_______________"}</small></div></div>
+<div class="footer"><p>Residencial Venezia — SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA</p><p>Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p>
 <p>Proposta gerada em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} | Válida por 7 dias</p></div>
 </body></html>`;
 
@@ -309,7 +276,7 @@ ${aceiteDigital ? `<div class="aceite"><h4>Aceite Digital do Comprador</h4><p>De
     } else {
       toast.error("Bloqueador de pop-ups ativo. Permita pop-ups para gerar o PDF.");
     }
-  }, [unidade, validarCamposProposta, comprador, cpf, telefone, imobiliaria, corretor, dataAssinatura, tipoValor, valorBase, valorEntrada, fgtsValue, valorFinanciamento, percentEntrada, percentFinanc, observacoes, aceiteDigital, parcelas, addProposta, condicaoEntrada, numParcelas, valorParcelaEntrada]);
+  }, [unidade, comprador, cpf, telefone, imobiliaria, corretor, dataAssinatura, tipoValor, valorBase, valorEntrada, fgtsValue, valorFinanciamento, percentEntrada, percentFinanc, observacoes, aceiteDigital, parcelas, addProposta, condicaoEntrada, numParcelas, valorParcelaEntrada]);
 
   // Gerar HTML da proposta para link compartilhável
   const gerarHtmlPropostaLink = useCallback(() => {
@@ -317,14 +284,6 @@ ${aceiteDigital ? `<div class="aceite"><h4>Aceite Digital do Comprador</h4><p>De
     const dataFormatada = dataAssinatura
       ? new Date(dataAssinatura + "T12:00:00").toLocaleDateString("pt-BR")
       : new Date().toLocaleDateString("pt-BR");
-    const compradorHtml = escapeHtml(comprador.trim() || "—");
-    const cpfHtml = escapeHtml(cpf || "—");
-    const telefoneHtml = escapeHtml(telefone || "—");
-    const imobiliariaHtml = escapeHtml(imobiliaria.trim() || "—");
-    const corretorHtml = escapeHtml(corretor.trim() || "—");
-    const observacoesHtml = observacoes.trim()
-      ? escapeHtml(observacoes.trim()).replace(/\n/g, "<br>")
-      : "";
     return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Proposta Comercial - Unidade ${unidade.numero} - Residencial Venezia</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a2e;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;background:#fff}
 .header{text-align:center;border-bottom:2px solid #c62828;padding-bottom:20px;margin-bottom:30px}
@@ -351,17 +310,17 @@ tr:nth-child(even){background:#f9f9f9}.total td{font-weight:bold;background:#f0f
 </style></head><body>
 <div class="header"><h1>VENEZIA</h1><h2>Residencial</h2><p class="date">Proposta Comercial | ${dataFormatada}</p></div>
 <div class="section"><div class="section-title">Dados do Comprador</div><div class="grid">
-<div class="item"><span class="l">Comprador:</span><span class="v">${compradorHtml}</span></div>
-<div class="item"><span class="l">CPF:</span><span class="v">${cpfHtml}</span></div>
-<div class="item"><span class="l">Telefone:</span><span class="v">${telefoneHtml}</span></div>
-<div class="item"><span class="l">Imobili\u00e1ria:</span><span class="v">${imobiliariaHtml}</span></div>
-<div class="item"><span class="l">Corretor:</span><span class="v">${corretorHtml}</span></div>
+<div class="item"><span class="l">Comprador:</span><span class="v">${comprador || "\u2014"}</span></div>
+<div class="item"><span class="l">CPF:</span><span class="v">${cpf || "\u2014"}</span></div>
+<div class="item"><span class="l">Telefone:</span><span class="v">${telefone || "\u2014"}</span></div>
+<div class="item"><span class="l">Imobili\u00e1ria:</span><span class="v">${imobiliaria || "\u2014"}</span></div>
+<div class="item"><span class="l">Corretor:</span><span class="v">${corretor || "\u2014"}</span></div>
 <div class="item"><span class="l">Data:</span><span class="v">${dataFormatada}</span></div>
 </div></div>
 <div class="section"><div class="section-title">Im\u00f3vel</div><div class="grid">
 <div class="item"><span class="l">Unidade:</span><span class="v">${unidade.numero}</span></div>
 <div class="item"><span class="l">Andar:</span><span class="v">${unidade.andar}\u00ba Andar</span></div>
-<div class="item"><span class="l">\u00c1rea Privativa:</span><span class="v">${unidade.area} m\u00b2</span></div>
+<div class="item"><span class="l">\u00c1rea Privativa:</span><span class="v">${unidade.area.toFixed(2).replace(".", ",")} m\u00b2</span></div>
 <div class="item"><span class="l">R$/m\u00b2:</span><span class="v">${formatCurrency(unidade.precoM2)}</span></div>
 <div class="item"><span class="l">Sacada:</span><span class="v">Com churrasqueira</span></div>
 <div class="item"><span class="l">Garagem:</span><span class="v">1 vaga coberta</span></div>
@@ -379,8 +338,8 @@ tr:nth-child(even){background:#f9f9f9}.total td{font-weight:bold;background:#f0f
 <div><div class="prazo">300 meses (25 anos)</div><div class="pval">${formatCurrency(parcelas.p300)}/m\u00eas</div></div>
 <div><div class="prazo">240 meses (20 anos)</div><div class="pval">${formatCurrency(parcelas.p240)}/m\u00eas</div></div>
 </div></div></div>
-${observacoesHtml ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br>${observacoesHtml}</div>` : ""}
-<div class="footer"><p><strong>Residencial Venezia</strong> \u2014 ARTE\u00c1 Empreendimentos</p><p>Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p><p>www.arteaempreendimentos.com.br</p><p style="margin-top:8px">Proposta v\u00e1lida por 7 dias | Gerada em ${new Date().toLocaleDateString("pt-BR")} \u00e0s ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p></div>
+${observacoes ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br>${observacoes.replace(/\n/g, "<br>")}</div>` : ""}
+<div class="footer"><p><strong>Residencial Venezia</strong> \u2014 SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA</p><p>Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p><p style="margin-top:8px">Proposta v\u00e1lida por 7 dias | Gerada em ${new Date().toLocaleDateString("pt-BR")} \u00e0s ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p></div>
 <div class="actions"><button class="btn btn-print" onclick="window.print()">Imprimir / Salvar PDF</button>${telefone ? "<a class=\"btn btn-whats\" href=\"https://wa.me/55" + telefone.replace(/\D/g, "") + "?text=" + encodeURIComponent("Ol\u00e1 " + (comprador || "") + "! Segue sua proposta comercial do Residencial Venezia - Unidade " + unidade.numero + ". Valor: " + formatCurrency(valorBase) + ". Entrada: " + formatCurrency(valorEntrada) + " (" + (condicaoEntrada === "parcelada" ? numParcelas + "x de " + formatCurrency(valorParcelaEntrada) : "\u00c0 Vista") + "). Financiamento: " + formatCurrency(valorFinanciamento) + ". Qualquer d\u00favida estou \u00e0 disposi\u00e7\u00e3o!") + "\" target=\"_blank\">Enviar via WhatsApp</a>" : ""}</div>
 </body></html>`;
   }, [unidade, comprador, cpf, telefone, imobiliaria, corretor, dataAssinatura, tipoValor, valorBase, valorEntrada, fgtsValue, valorFinanciamento, percentEntrada, percentFinanc, observacoes, parcelas, condicaoEntrada, numParcelas, valorParcelaEntrada]);
@@ -388,7 +347,6 @@ ${observacoesHtml ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br
   // Enviar proposta por e-mail com link da proposta
   const enviarEmail = useCallback(() => {
     if (!unidade) return;
-    if (!validarCamposProposta()) return;
 
     // Gerar proposta em nova aba (link compartilh\u00e1vel)
     const htmlProposta = gerarHtmlPropostaLink();
@@ -415,7 +373,7 @@ Segue a proposta comercial referente \u00e0 Unidade ${unidade.numero} do Residen
 RESUMO DA PROPOSTA COMERCIAL
 \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
 
-\u25b8 Unidade: ${unidade.numero} | ${unidade.andar}\u00ba Andar | ${unidade.area} m\u00b2
+\u25b8 Unidade: ${unidade.numero} | ${unidade.andar}\u00ba Andar | ${unidade.area.toFixed(2).replace(".", ",")} m\u00b2
 \u25b8 Valor (${tipoValor === "com_doc" ? "Com Documenta\u00e7\u00e3o" : "Sem Documenta\u00e7\u00e3o"}): ${formatCurrency(valorBase)}
 
 \u25b8 Entrada (${percentEntrada}%): ${formatCurrency(valorEntrada)}
@@ -439,9 +397,8 @@ Imobili\u00e1ria: ${imobiliaria || "\u2014"}
 Corretor: ${corretor || "\u2014"}
 Data: ${dataFormatada}
 
-Residencial Venezia \u2014 ARTE\u00c1 Empreendimentos
+Residencial Venezia \u2014 SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA
 Loteamento Terra Firme, Bairro Areias, Tijucas/SC
-www.arteaempreendimentos.com.br
 
 \u26a0\ufe0f Proposta v\u00e1lida por 7 dias a partir da data de emiss\u00e3o.
 `);
@@ -450,7 +407,7 @@ www.arteaempreendimentos.com.br
       window.open(`mailto:?subject=${assunto}&body=${corpo}`, "_self");
       toast.success("Proposta aberta em nova aba + e-mail pronto para envio!");
     }, 600);
-  }, [unidade, validarCamposProposta, comprador, tipoValor, valorBase, percentEntrada, valorEntrada, fgtsValue, valorFinanciamento, percentFinanc, imobiliaria, corretor, dataAssinatura, observacoes, parcelas, condicaoEntrada, numParcelas, valorParcelaEntrada, gerarHtmlPropostaLink]);
+  }, [unidade, comprador, tipoValor, valorBase, percentEntrada, valorEntrada, fgtsValue, valorFinanciamento, percentFinanc, imobiliaria, corretor, dataAssinatura, observacoes, parcelas, condicaoEntrada, numParcelas, valorParcelaEntrada, gerarHtmlPropostaLink]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

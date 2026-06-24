@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { EMPREENDIMENTO } from "@/data/empreendimento";
-import { Calculator, Landmark, CreditCard, Info } from "lucide-react";
+import { Calculator, Landmark, CreditCard, Info, FileText, DollarSign } from "lucide-react";
+import PropostaComercial from "@/components/PropostaComercial";
+import { calcularSimulacaoCEF, CEF_PARAMS } from "@/lib/simuladorCEF";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 }).format(value);
@@ -9,73 +11,34 @@ const formatCurrency = (value: number) =>
 const formatCurrencyDecimal = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 }).format(value);
 
-// Parâmetros CEF - Faixa 3 MCMV - Tabela Price/TR
-const CEF_PARAMS = {
-  taxaAnual: 7.66, // % a.a. + TR (não cotista FGTS)
-  taxaAnualCotista: 7.16, // % a.a. + TR (cotista FGTS 3+ anos)
-  prazoMaxMeses: 420, // 35 anos
-  seguroMIP: 0.0003, // ~0.03% do saldo/mês
-  seguroDFI: 0.00005, // ~0.005% do valor imóvel/mês
-  taxaAdm: 25, // R$ 25/mês
-};
+interface SimuladorSectionProps {
+  corretor?: any;
+}
 
-export default function SimuladorSection() {
+export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
   const { ref, isVisible } = useScrollAnimation();
   const [valorImovel, setValorImovel] = useState(EMPREENDIMENTO.valorMin);
+  const [percentualEntrada, setPercentualEntrada] = useState(20);
+  const [reforcos, setReforcos] = useState(0);
   const [prazoMeses, setPrazoMeses] = useState(420);
   const [isCotista, setIsCotista] = useState(false);
+  const [showProposta, setShowProposta] = useState(false);
 
   const simulacao = useMemo(() => {
-    // Entrada = 20% do valor de venda
-    const entradaTotal = valorImovel * 0.20;
-    
-    // Reforço: R$ 20.000 na entrega das chaves (36 meses)
-    const reforcoChaves = 20000;
-    
-    // Entrada líquida = Entrada 20% - R$ 20k reforço chaves
-    const entradaLiquida = entradaTotal - reforcoChaves;
-    
-    // Parcela da entrada: Ato + 36x (entrada líquida / 37)
-    const parcelaEntrada = entradaLiquida / 37;
-    
-    // Financiamento CEF = 80% do valor (Programa MCMV)
-    const valorFinanciado = valorImovel * 0.80;
-
-    // Taxa mensal (Price)
-    const taxaAnual = isCotista ? CEF_PARAMS.taxaAnualCotista : CEF_PARAMS.taxaAnual;
-    const taxaMensal = taxaAnual / 100 / 12;
-    const n = prazoMeses;
-
-    // Cálculo da parcela Price: PMT = PV * [i * (1+i)^n] / [(1+i)^n - 1]
-    const fator = Math.pow(1 + taxaMensal, n);
-    const parcelaAmortizacao = valorFinanciado * (taxaMensal * fator) / (fator - 1);
-
-    // Seguros e taxa de administração
-    const seguroMIP = valorFinanciado * CEF_PARAMS.seguroMIP;
-    const seguroDFI = valorImovel * CEF_PARAMS.seguroDFI;
-    const taxaAdm = CEF_PARAMS.taxaAdm;
-
-    // Parcela total do financiamento (1ª parcela)
-    const parcelaFinanciamento = parcelaAmortizacao + seguroMIP + seguroDFI + taxaAdm;
-
-    return {
-      valorImovel,
-      entradaTotal,
-      reforcoChaves,
-      entradaLiquida,
-      parcelaEntrada,
-      valorFinanciado,
-      taxaAnual,
-      parcelaAmortizacao,
-      seguroMIP,
-      seguroDFI,
-      taxaAdm,
-      parcelaFinanciamento,
-      prazoMeses,
-    };
-  }, [valorImovel, prazoMeses, isCotista]);
+    return calcularSimulacaoCEF({ valorImovel, percentualEntrada, reforcos, prazoMeses, isCotista });
+  }, [valorImovel, percentualEntrada, reforcos, prazoMeses, isCotista]);
 
   const prazoAnos = prazoMeses / 12;
+
+  // Formatar input de reforços
+  const handleReforcosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "");
+    setReforcos(Number(raw));
+  };
+
+  const reforcosFormatado = reforcos > 0
+    ? new Intl.NumberFormat("pt-BR").format(reforcos)
+    : "";
 
   return (
     <section id="simulador" className="py-24 bg-[#f8f7f4]">
@@ -129,27 +92,74 @@ export default function SimuladorSection() {
             </div>
           </div>
 
-          {/* Entrada Obrigatória */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-6">
-            <div>
-              <p className="text-sm text-gray-600">Entrada Obrigatória</p>
-              <p className="text-xs text-gray-400">20% FIXO</p>
+          {/* Cursor de Entrada (min 20%) */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">Percentual de Entrada</label>
+              <span className="text-sm font-bold text-[#c62828]">{percentualEntrada}%</span>
             </div>
-            <p className="text-xl font-bold text-[#1a1a2e]">{formatCurrency(simulacao.entradaTotal)}</p>
+            <input
+              type="range"
+              min={20}
+              max={50}
+              step={1}
+              value={percentualEntrada}
+              onChange={(e) => setPercentualEntrada(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#c62828]"
+            />
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>20% (mínimo)</span>
+              <span>50%</span>
+            </div>
           </div>
 
-          {/* Destaque: Parcela da Entrada */}
+          {/* Campo de Reforços */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">Reforços (abatido da entrada)</label>
+              <span className="text-xs text-gray-400">Opcional • Não altera o financiamento</span>
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={reforcosFormatado}
+                onChange={handleReforcosChange}
+                placeholder="0"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-[#1a1a2e] font-medium focus:outline-none focus:ring-2 focus:ring-[#c62828]/30 focus:border-[#c62828] transition-all"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Reforços são pagos em datas específicas e reduzem o saldo parcelado da entrada (36x)
+            </p>
+          </div>
+
+          {/* Destaque: Entrada */}
           <div className="p-6 bg-gradient-to-r from-[#c62828]/5 to-[#c62828]/10 border-2 border-[#c62828]/20 rounded-xl mb-6">
             <div className="flex items-center gap-2 mb-1">
               <CreditCard size={18} className="text-[#c62828]" />
-              <span className="text-sm font-medium text-[#1a1a2e]">Parcela da Entrada</span>
+              <span className="text-sm font-medium text-[#1a1a2e]">Entrada — {simulacao.percentualEntrada}%</span>
             </div>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-3xl font-bold text-[#c62828]">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
-              <span className="text-sm text-gray-500">/mês</span>
+              <span className="text-sm text-gray-500">/mês • 36 parcelas</span>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Ato + 36x sem juros • Apenas INCC-M • Reforço: R$ 20.000 na entrega das chaves (36 meses)
+            <div className="mt-3 space-y-1">
+              <p className="text-xs text-gray-600">
+                Entrada Total: <span className="font-semibold">{formatCurrency(simulacao.entradaTotal)}</span>
+              </p>
+              {simulacao.reforcos > 0 && (
+                <p className="text-xs text-gray-600">
+                  Reforços: <span className="font-semibold text-[#c62828]">- {formatCurrency(simulacao.reforcos)}</span>
+                </p>
+              )}
+              <p className="text-xs text-gray-600">
+                Saldo Parcelado: <span className="font-semibold">{formatCurrency(simulacao.saldoParcelado)}</span> ÷ 36 = <span className="font-semibold">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
+              </p>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Correção pelo INCC-M durante a obra
             </p>
           </div>
 
@@ -191,25 +201,70 @@ export default function SimuladorSection() {
           </div>
 
           {/* Destaque: Parcela do Financiamento */}
-          <div className="p-6 bg-[#1a1a2e] rounded-xl text-white">
+          <div className="p-6 bg-[#1a1a2e] rounded-xl text-white mb-6">
             <div className="flex items-center gap-2 mb-1">
               <Calculator size={18} className="text-emerald-400" />
-              <span className="text-sm font-medium text-white/80">Parcela Estimada do Financiamento</span>
+              <span className="text-sm font-medium text-white/80">Financiamento CEF — {simulacao.percentualFinanciado}%</span>
             </div>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-4xl font-bold text-emerald-400">{formatCurrencyDecimal(simulacao.parcelaFinanciamento)}</span>
               <span className="text-sm text-white/50">/mês • {prazoMeses} parcelas • Tabela Price + TR</span>
             </div>
+            <p className="text-xs text-white/40 mt-2">
+              Valor Financiado: {formatCurrency(simulacao.valorFinanciado)} • Taxa: {simulacao.taxaAnual}% a.a. + TR
+            </p>
           </div>
 
-          {/* Detalhamento */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h4 className="text-sm font-semibold text-[#1a1a2e] mb-4">Detalhamento</h4>
+          {/* ===== RESUMO COMPLETO DA SIMULAÇÃO ===== */}
+          <div className="mt-6 pt-6 border-t-2 border-[#c62828]/20">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign size={18} className="text-[#c62828]" />
+              <h4 className="text-sm font-bold text-[#1a1a2e] uppercase tracking-wide">Resumo da Simulação</h4>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-xs text-gray-500">Saldo Financiado (80%)</p>
-                <p className="text-sm font-medium text-[#1a1a2e]">{formatCurrency(simulacao.valorFinanciado)}</p>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">Valor da Unidade</p>
+                <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.valorImovel)}</p>
               </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">% Entrada</p>
+                <p className="text-sm font-bold text-[#c62828]">{simulacao.percentualEntrada}%</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">Valor Total da Entrada</p>
+                <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.entradaTotal)}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">Reforços</p>
+                <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.reforcos)}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">Saldo Parcelado</p>
+                <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.saldoParcelado)}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">Parcela da Entrada (36x)</p>
+                <p className="text-sm font-bold text-[#c62828]">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">% Financiado</p>
+                <p className="text-sm font-bold text-[#0d47a1]">{simulacao.percentualFinanciado}%</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">Valor Financiado</p>
+                <p className="text-sm font-bold text-[#0d47a1]">{formatCurrency(simulacao.valorFinanciado)}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">Total da Operação</p>
+                <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.totalOperacao)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Detalhamento Financiamento */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <h4 className="text-sm font-semibold text-[#1a1a2e] mb-4">Detalhamento do Financiamento</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-xs text-gray-500">Amortização + Juros</p>
                 <p className="text-sm font-medium text-[#1a1a2e]">{formatCurrencyDecimal(simulacao.parcelaAmortizacao)}</p>
@@ -224,11 +279,15 @@ export default function SimuladorSection() {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Taxa de Juros Anual</p>
-                <p className="text-sm font-medium text-[#1a1a2e]">{simulacao.taxaAnual}% a.a.</p>
+                <p className="text-sm font-medium text-[#1a1a2e]">{simulacao.taxaAnual}% a.a. + TR</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Reforço na Entrega</p>
-                <p className="text-sm font-medium text-[#1a1a2e]">{formatCurrency(simulacao.reforcoChaves)}</p>
+                <p className="text-xs text-gray-500">Prazo</p>
+                <p className="text-sm font-medium text-[#1a1a2e]">{prazoMeses} meses ({prazoAnos} anos)</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Sistema</p>
+                <p className="text-sm font-medium text-[#1a1a2e]">Tabela Price + TR</p>
               </div>
             </div>
           </div>
@@ -239,11 +298,23 @@ export default function SimuladorSection() {
               <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-xs text-blue-800">
                 <p className="font-medium mb-1">Parâmetros CEF — Faixa 3 MCMV — Tijucas/SC</p>
-                <p>Entrada: 20% do valor de venda | Parcelamento: Ato + 36x (INCC-M)</p>
-                <p>Reforço: R$ 20.000 na entrega das chaves (36 meses)</p>
-                <p>Financiamento: 80% do valor via Programa MCMV | Sistema Price + TR | Prazo máximo: 420 meses</p>
+                <p>Entrada mínima: 20% do valor | Parcelamento: 36x (INCC-M)</p>
+                <p>Reforços: abatidos da entrada antes do parcelamento (não alteram o financiamento)</p>
+                <p>Financiamento: máximo 80% via Programa MCMV | Sistema Price + TR | Prazo máximo: 420 meses</p>
               </div>
             </div>
+          </div>
+
+          {/* Botão Gerar Proposta */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => setShowProposta(true)}
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#c62828] text-white font-semibold rounded-lg hover:bg-[#b71c1c] transition-all duration-200 shadow-lg shadow-[#c62828]/20 hover:shadow-xl hover:shadow-[#c62828]/30 active:scale-[0.97]"
+            >
+              <FileText size={18} />
+              Gerar Proposta Comercial
+            </button>
+            <p className="text-xs text-gray-500 mt-3">Gere uma proposta profissional com PDF, WhatsApp e e-mail</p>
           </div>
 
           <p className="text-gray-400 text-xs text-center mt-6">
@@ -252,6 +323,25 @@ export default function SimuladorSection() {
           </p>
         </div>
       </div>
+
+      {/* Modal de Proposta Comercial */}
+      <PropostaComercial
+        open={showProposta}
+        onClose={() => setShowProposta(false)}
+        valorSimulado={valorImovel}
+        percentualEntradaSimulado={percentualEntrada}
+        reforcosSimulado={reforcos}
+        corretorData={corretor ? {
+          id: corretor.id,
+          nome: corretor.nome,
+          whatsapp: corretor.whatsapp,
+          telefone: corretor.telefone,
+          email: corretor.email,
+          creci: corretor.creci,
+          imobiliariaNome: corretor.imobiliariaNome,
+          imobiliariaId: corretor.imobiliariaId,
+        } : undefined}
+      />
     </section>
   );
 }

@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { UNIDADES, EMPREENDIMENTO, type Unidade, type UnidadeStatus } from "@/data/empreendimento";
 import { BarChart3, TrendingUp, Target, DollarSign, Check, Lock, ShieldCheck, PieChart, Printer } from "lucide-react";
@@ -11,17 +12,6 @@ import { toast } from "sonner";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 }).format(value);
-
-const getInitialStatuses = (): Record<string, UnidadeStatus> => {
-  const fallback = Object.fromEntries(UNIDADES.map((u) => [u.id, u.status])) as Record<string, UnidadeStatus>;
-  try {
-    const saved = localStorage.getItem("venezia_unidades_status");
-    return saved ? { ...fallback, ...JSON.parse(saved) } : fallback;
-  } catch {
-    localStorage.removeItem("venezia_unidades_status");
-    return fallback;
-  }
-};
 
 // Componente de Relatório Consolidado com gráfico
 function RelatorioConsolidado({
@@ -295,20 +285,8 @@ export default function DashboardSection() {
   const { isAuthenticated, addLog, salvarDadosVenda } = useAuth();
   const [editando, setEditando] = useState<string | null>(null);
 
-  // Estado sincronizado com localStorage
-  const [unidadesStatus, setUnidadesStatus] = useState<Record<string, UnidadeStatus>>(() => {
-    return getInitialStatuses();
-  });
-
-  useEffect(() => {
-    const syncStatuses = () => setUnidadesStatus(getInitialStatuses());
-    window.addEventListener("storage", syncStatuses);
-    window.addEventListener("venezia-status-update", syncStatuses);
-    return () => {
-      window.removeEventListener("storage", syncStatuses);
-      window.removeEventListener("venezia-status-update", syncStatuses);
-    };
-  }, []);
+  // Estado sincronizado entre módulos
+  const { unidadesStatus, updateStatus } = useUnidadesStatus();
 
   // Modal de senha
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -373,7 +351,7 @@ export default function DashboardSection() {
 </style></head><body>
 <div class="header">
   <h1>Residencial Venezia — Espelho de Vendas</h1>
-  <p>ARTEÁ Empreendimentos | Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p>
+  <p>SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA | Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p>
   <p style="margin-top:5px;">Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
 </div>
 <div class="kpis">
@@ -386,7 +364,7 @@ export default function DashboardSection() {
 ${[4, 3, 2, 1].map((andar) => {
   const unidadesAndar = unidades.filter((u) => u.andar === andar);
   if (unidadesAndar.length === 0) return "";
-  return `<div class="andar-row"><div class="andar-label">${andar}º Andar</div><div class="units">${unidadesAndar.map((u) => `<div class="unit ${u.status}"><div class="numero">${u.numero}</div><div class="info">${u.area}m² • ${formatCurrency(u.valorVenda)}</div><div class="info">c/ Doc: ${formatCurrency(u.valorComDocumentacao)}</div><div class="status">${u.status === "disponivel" ? "Disponível" : u.status === "reservado" ? "Reservado" : "Vendido"}</div></div>`).join("")}</div></div>`;
+  return `<div class="andar-row"><div class="andar-label">${andar}º Andar</div><div class="units">${unidadesAndar.map((u) => `<div class="unit ${u.status}"><div class="numero">${u.numero}</div><div class="info">${u.area.toFixed(2).replace('.', ',')}m² • ${formatCurrency(u.valorVenda)}</div><div class="info">c/ Doc: ${formatCurrency(u.valorComDocumentacao)}</div><div class="status">${u.status === "disponivel" ? "Disponível" : u.status === "reservado" ? "Reservado" : "Vendido"}</div></div>`).join("")}</div></div>`;
 }).join("")}
 </div>
 <div class="legend">
@@ -395,7 +373,7 @@ ${[4, 3, 2, 1].map((andar) => {
   <div class="legend-item"><div class="legend-dot" style="background:#fca5a5;"></div>Vendido (${vendidos})</div>
 </div>
 <div class="footer">
-  <p>Residencial Venezia — ARTEÁ Empreendimentos | VGV Vendido: ${formatCurrency(vgvVendido)} | VGV Reservado: ${formatCurrency(vgvReservado)} | VGV Disponível: ${formatCurrency(vgvDisponivel)}</p>
+  <p>Residencial Venezia — SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA | VGV Vendido: ${formatCurrency(vgvVendido)} | VGV Reservado: ${formatCurrency(vgvReservado)} | VGV Disponível: ${formatCurrency(vgvDisponivel)}</p>
 </div>
 </body></html>`;
 
@@ -431,12 +409,7 @@ ${[4, 3, 2, 1].map((andar) => {
       usuario: "Administrador",
     });
 
-    setUnidadesStatus((prev) => {
-      const updated = { ...prev, [id]: novoStatus };
-      localStorage.setItem("venezia_unidades_status", JSON.stringify(updated));
-      window.dispatchEvent(new Event("venezia-status-update"));
-      return updated;
-    });
+    updateStatus(id, novoStatus);
     setEditando(null);
     toast.success(`Unidade ${unidade?.numero} alterada para ${statusLabel}`);
   };
@@ -454,12 +427,7 @@ ${[4, 3, 2, 1].map((andar) => {
         detalhes: `Comprador: ${dados.comprador} | Corretor: ${dados.corretor} | Imob: ${dados.imobiliaria} | Data: ${dados.dataAssinatura}`,
       });
 
-      setUnidadesStatus((prev) => {
-        const updated = { ...prev, [vendaPendingId!]: "vendido" as UnidadeStatus };
-        localStorage.setItem("venezia_unidades_status", JSON.stringify(updated));
-        window.dispatchEvent(new Event("venezia-status-update"));
-        return updated;
-      });
+      updateStatus(vendaPendingId!, "vendido");
 
       toast.success(`Unidade ${unidade?.numero} — Venda registrada com sucesso!`);
       setVendaPendingId(null);
@@ -598,7 +566,7 @@ ${[4, 3, 2, 1].map((andar) => {
                           }`}
                         >
                           <p className="font-semibold">{u.numero}</p>
-                          <p className="text-[10px] opacity-70">{u.area}m² • {formatCurrency(u.valorVenda)}</p>
+                          <p className="text-[10px] opacity-70">{u.area.toFixed(2).replace('.', ',')}m² • {formatCurrency(u.valorVenda)}</p>
                           <p className="text-[9px] opacity-50">c/ Doc: {formatCurrency(u.valorComDocumentacao)}</p>
                           <p className="text-[9px] uppercase mt-1 opacity-60 flex items-center justify-center gap-1">
                             {u.status === "disponivel" ? "Disponível" : u.status === "reservado" ? "Reservado" : "Vendido"}

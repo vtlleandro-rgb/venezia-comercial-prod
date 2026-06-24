@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
+import { trpc } from "@/lib/trpc";
 import { Lock, Eye, EyeOff } from "lucide-react";
 
 interface PasswordModalProps {
@@ -18,19 +18,22 @@ interface PasswordModalProps {
 }
 
 export default function PasswordModal({ open, onOpenChange, onSuccess }: PasswordModalProps) {
-  const { authenticate } = useAuth();
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const utils = trpc.useUtils();
+  const loginMutation = trpc.auth.login.useMutation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (authenticate(senha)) {
+    try {
+      await loginMutation.mutateAsync({ password: senha });
+      await utils.auth.me.invalidate();
       setErro(false);
       setSenha("");
       onOpenChange(false);
       onSuccess();
-    } else {
+    } catch {
       setErro(true);
     }
   };
@@ -94,9 +97,10 @@ export default function PasswordModal({ open, onOpenChange, onSuccess }: Passwor
             </button>
             <button
               type="submit"
+              disabled={loginMutation.isPending}
               className="px-5 py-2.5 text-sm font-medium text-white bg-[#c62828] rounded-lg hover:bg-[#b71c1c] transition-colors shadow-sm"
             >
-              Desbloquear
+              {loginMutation.isPending ? "Validando..." : "Desbloquear"}
             </button>
           </DialogFooter>
         </form>

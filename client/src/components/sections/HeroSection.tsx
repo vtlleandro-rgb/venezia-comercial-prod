@@ -22,7 +22,7 @@ export default function HeroSection() {
         <img
           src={IMAGENS.logoVenezia}
           alt="Residencial Venezia"
-          className="h-24 md:h-32 w-auto mx-auto mb-8 drop-shadow-lg"
+          className="h-24 md:h-32 w-auto mx-auto mb-8 brightness-0 invert drop-shadow-lg"
         />
         
         <p className="text-white/80 text-lg md:text-xl font-light tracking-wide mb-2 font-sans">
@@ -36,7 +36,7 @@ export default function HeroSection() {
         <div className="italian-divider mx-auto mb-8" />
 
         <p className="text-white/70 text-base md:text-lg font-light max-w-2xl mx-auto mb-10">
-          Apartamentos de 2 suítes com {EMPREENDIMENTO.areaPrivativaMin} a {EMPREENDIMENTO.areaPrivativaMax} m² de área privativa.
+          Apartamentos de 2 suítes com 56,30 a 60,85 m² de área privativa.
           Sacada com churrasqueira, elevador e rooftop exclusivo.
         </p>
 
@@ -67,7 +67,7 @@ export default function HeroSection() {
           {[
             { value: "12", label: "Unidades" },
             { value: "2", label: "Suítes" },
-            { value: "57m²", label: "Até" },
+            { value: "60m²", label: "Até" },
             { value: "R$ 375k", label: "A partir de" },
           ].map((item) => (
             <div key={item.label} className="text-center">

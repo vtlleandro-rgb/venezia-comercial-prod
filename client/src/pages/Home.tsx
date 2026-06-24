@@ -9,8 +9,13 @@ import SimuladorSection from "@/components/sections/SimuladorSection";
 import DashboardSection from "@/components/sections/DashboardSection";
 import LocalizacaoSection from "@/components/sections/LocalizacaoSection";
 import Footer from "@/components/Footer";
+import PartnersSection from "@/components/sections/PartnersSection";
+import { useCorretor } from "@/hooks/useCorretor";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 
 export default function Home() {
+  const { corretor } = useCorretor();
+
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -23,11 +28,13 @@ export default function Home() {
         <GaleriaSection />
         <PlantasSection />
         <TabelaSection />
-        <SimuladorSection />
+        <SimuladorSection corretor={corretor} />
         <DashboardSection />
         <LocalizacaoSection />
-        <Footer />
+        <PartnersSection />
+        <Footer corretor={corretor} />
       </main>
+      <WhatsAppFloat corretor={corretor} />
     </div>
   );
 }

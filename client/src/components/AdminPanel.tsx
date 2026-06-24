@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useAuth, type LogEntry, type PropostaRegistro } from "@/contexts/AuthContext";
-import { Settings, Key, History, Eye, EyeOff, Check, AlertCircle, Download, FileSpreadsheet, FileText, Trophy, Users, Filter } from "lucide-react";
+import { Settings, History, Download, FileSpreadsheet, FileText, Trophy, Users, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 interface AdminPanelProps {
@@ -74,20 +74,14 @@ const exportarCSV = (log: LogEntry[]) => {
 const exportarPDF = (log: LogEntry[]) => {
   if (log.length === 0) { toast.error("Nenhum registro para exportar."); return; }
   const rows = log.map((entry) => `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px;">${formatDate(entry.data)}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px;font-weight:600;">${entry.unidade}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px;">${statusLabel(entry.statusAnterior)}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px;">${statusLabel(entry.statusNovo)}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px;">${entry.detalhes || "—"}</td></tr>`).join("");
-  const html = `<!DOCTYPE html><html><head><title>Log de Alterações</title><style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#1a1a2e}h1{font-size:20px;margin-bottom:4px}.sub{color:#666;font-size:12px;margin-bottom:24px}table{width:100%;border-collapse:collapse}th{background:#1a1a2e;color:white;padding:8px;font-size:11px;text-align:left}.ft{margin-top:30px;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:10px}</style></head><body><h1>Residencial Venezia — Log de Alterações</h1><p class="sub">Gerado em ${new Date().toLocaleDateString("pt-BR")} | ${log.length} registro(s)</p><table><thead><tr><th>Data</th><th>Unidade</th><th>De</th><th>Para</th><th>Detalhes</th></tr></thead><tbody>${rows}</tbody></table><div class="ft">Arteá Empreendimentos — Tijucas/SC</div></body></html>`;
+  const html = `<!DOCTYPE html><html><head><title>Log de Alterações</title><style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#1a1a2e}h1{font-size:20px;margin-bottom:4px}.sub{color:#666;font-size:12px;margin-bottom:24px}table{width:100%;border-collapse:collapse}th{background:#1a1a2e;color:white;padding:8px;font-size:11px;text-align:left}.ft{margin-top:30px;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:10px}</style></head><body><h1>Residencial Venezia — Log de Alterações</h1><p class="sub">Gerado em ${new Date().toLocaleDateString("pt-BR")} | ${log.length} registro(s)</p><table><thead><tr><th>Data</th><th>Unidade</th><th>De</th><th>Para</th><th>Detalhes</th></tr></thead><tbody>${rows}</tbody></table><div class="ft">SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA — Tijucas/SC</div></body></html>`;
   const w = window.open("", "_blank");
   if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500); toast.success("PDF pronto!"); }
 };
 
 export default function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
-  const { alterarSenha, log, propostas } = useAuth();
-  const [tab, setTab] = useState<"log" | "propostas" | "performance" | "senha">("log");
-  const [senhaAtual, setSenhaAtual] = useState("");
-  const [senhaNova, setSenhaNova] = useState("");
-  const [senhaConfirm, setSenhaConfirm] = useState("");
-  const [showSenhaAtual, setShowSenhaAtual] = useState(false);
-  const [showSenhaNova, setShowSenhaNova] = useState(false);
-  const [erro, setErro] = useState("");
+  const { log, propostas } = useAuth();
+  const [tab, setTab] = useState<"log" | "propostas" | "performance">("log");
   const [filtroCorretor, setFiltroCorretor] = useState("");
   const [filtroData, setFiltroData] = useState("");
 
@@ -162,18 +156,6 @@ export default function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
     return { totalPropostas, totalVendas, totalReservas, vgvTotal };
   }, [propostas, log]);
 
-  const handleAlterarSenha = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErro("");
-    if (senhaNova.length < 4) { setErro("A nova senha deve ter pelo menos 4 caracteres."); return; }
-    if (senhaNova !== senhaConfirm) { setErro("As senhas não coincidem."); return; }
-    const sucesso = alterarSenha(senhaAtual, senhaNova);
-    if (sucesso) {
-      toast.success("Senha alterada com sucesso!");
-      setSenhaAtual(""); setSenhaNova(""); setSenhaConfirm("");
-    } else { setErro("Senha atual incorreta."); }
-  };
-
   // Exportar propostas como CSV
   const exportarPropostasCSV = () => {
     if (propostasFiltradas.length === 0) { toast.error("Nenhuma proposta para exportar."); return; }
@@ -236,15 +218,6 @@ export default function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
             <Trophy size={13} />
             Performance
           </button>
-          <button
-            onClick={() => setTab("senha")}
-            className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-              tab === "senha" ? "border-[#c62828] text-[#c62828]" : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <Key size={13} />
-            Senha
-          </button>
         </div>
 
         {/* Tab Content */}
@@ -270,22 +243,32 @@ export default function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
                       </button>
                     </div>
                   </div>
-                  {log.map((entry: LogEntry) => (
-                    <div key={entry.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  {log.map((entry: LogEntry) => {
+                    const tipoIcon = entry.tipo === "cancelamento" ? "❌" : entry.tipo === "venda" ? "✅" : entry.tipo === "reserva" ? "🟡" : entry.tipo === "distrato" ? "⚠️" : "🔄";
+                    const tipoBg = entry.tipo === "cancelamento" ? "bg-red-50 border-red-100" : entry.tipo === "venda" ? "bg-emerald-50 border-emerald-100" : entry.tipo === "reserva" ? "bg-amber-50 border-amber-100" : "bg-gray-50 border-gray-100";
+                    return (
+                    <div key={entry.id} className={`flex items-start gap-3 p-3 rounded-lg border ${tipoBg}`}>
                       <div className="w-8 h-8 rounded-full bg-[#1a1a2e]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-[#1a1a2e]">{entry.unidade}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs">{tipoIcon}</span>
+                          {entry.tipo && <span className="text-[10px] font-medium uppercase tracking-wider text-gray-500 bg-white/80 px-1.5 py-0.5 rounded">{entry.tipo}</span>}
                           <span className={`text-xs font-medium ${statusColor(entry.statusAnterior)}`}>{statusLabel(entry.statusAnterior)}</span>
                           <span className="text-gray-300">→</span>
                           <span className={`text-xs font-medium ${statusColor(entry.statusNovo)}`}>{statusLabel(entry.statusNovo)}</span>
                         </div>
-                        {entry.detalhes && <p className="text-xs text-gray-500 mt-0.5 truncate">{entry.detalhes}</p>}
-                        <span className="text-[10px] text-gray-400">{formatDate(entry.data)}</span>
+                        {entry.motivo && <p className="text-xs text-red-600 mt-0.5"><strong>Motivo:</strong> {entry.motivo}</p>}
+                        {entry.detalhes && <p className="text-xs text-gray-500 mt-0.5">{entry.detalhes}</p>}
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] text-gray-400">{formatDate(entry.data)}</span>
+                          {entry.usuario && <span className="text-[10px] text-gray-400">• {entry.usuario}</span>}
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
                 </>
               )}
             </div>
@@ -440,59 +423,6 @@ export default function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
                 )}
               </div>
             </div>
-          )}
-
-          {/* === ALTERAR SENHA === */}
-          {tab === "senha" && (
-            <form onSubmit={handleAlterarSenha} className="space-y-4 max-w-sm">
-              <div>
-                <label className="text-xs font-medium text-gray-700 mb-1 block">Senha Atual</label>
-                <div className="relative">
-                  <Input
-                    type={showSenhaAtual ? "text" : "password"}
-                    placeholder="Digite a senha atual"
-                    value={senhaAtual}
-                    onChange={(e) => { setSenhaAtual(e.target.value); setErro(""); }}
-                    className="h-10 text-sm pr-10"
-                  />
-                  <button type="button" onClick={() => setShowSenhaAtual(!showSenhaAtual)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showSenhaAtual ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-700 mb-1 block">Nova Senha</label>
-                <div className="relative">
-                  <Input
-                    type={showSenhaNova ? "text" : "password"}
-                    placeholder="Mínimo 4 caracteres"
-                    value={senhaNova}
-                    onChange={(e) => { setSenhaNova(e.target.value); setErro(""); }}
-                    className="h-10 text-sm pr-10"
-                  />
-                  <button type="button" onClick={() => setShowSenhaNova(!showSenhaNova)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showSenhaNova ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-700 mb-1 block">Confirmar Nova Senha</label>
-                <Input
-                  type="password"
-                  placeholder="Repita a nova senha"
-                  value={senhaConfirm}
-                  onChange={(e) => { setSenhaConfirm(e.target.value); setErro(""); }}
-                  className="h-10 text-sm"
-                />
-              </div>
-              {erro && <div className="flex items-center gap-2 text-red-600 text-sm"><AlertCircle size={14} />{erro}</div>}
-              {senhaNova && senhaConfirm && senhaNova === senhaConfirm && (
-                <div className="flex items-center gap-2 text-emerald-600 text-xs"><Check size={14} />Senhas coincidem</div>
-              )}
-              <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-[#c62828] rounded-lg hover:bg-[#b71c1c] transition-colors shadow-sm">
-                Alterar Senha
-              </button>
-            </form>
           )}
         </div>
       </DialogContent>

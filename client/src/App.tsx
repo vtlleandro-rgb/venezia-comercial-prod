@@ -6,11 +6,21 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import Home from "./pages/Home";
-
+import AdminLogin from "./pages/AdminLogin";
+import AdminCorretores from "./pages/AdminCorretores";
+import PainelCorretor from "./pages/PainelCorretor";
+import VisualizarProposta from "./pages/VisualizarProposta";
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/admin-login"} component={AdminLogin} />
+      <Route path={"/admin-corretores"} component={AdminCorretores} />
+      <Route path={"/admin/corretores"} component={AdminCorretores} />
+      <Route path={"/painel-corretor"} component={PainelCorretor} />
+      <Route path={"/corretor"} component={PainelCorretor} />
+      <Route path="/proposta/:codigo" component={VisualizarProposta} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

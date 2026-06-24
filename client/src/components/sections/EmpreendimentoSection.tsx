@@ -1,5 +1,5 @@
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { EMPREENDIMENTO } from "@/data/empreendimento";
+import { EMPREENDIMENTO, IMAGENS } from "@/data/empreendimento";
 import { Building2, Users, Ruler, Car } from "lucide-react";
 
 export default function EmpreendimentoSection() {
@@ -21,7 +21,7 @@ export default function EmpreendimentoSection() {
           </h2>
           <div className="italian-divider mx-auto mb-6" />
           <p className="text-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
-            Inspirado na elegância italiana, o Residencial Venezia é um empreendimento exclusivo da ARTEÁ Empreendimentos,
+            Inspirado na elegância italiana, o Residencial Venezia é um empreendimento exclusivo da SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA,
             projetado para quem valoriza qualidade de vida, conforto e sofisticação. Com arquitetura contemporânea
             assinada por Cadu Cavalheiro, cada detalhe foi pensado para proporcionar uma experiência de morar única.
           </p>
@@ -32,7 +32,7 @@ export default function EmpreendimentoSection() {
           {/* Image */}
           <div className="relative rounded-lg overflow-hidden shadow-xl">
             <img
-              src="/assets/venezia/card-placeholder.svg"
+              src={IMAGENS.heroBanner}
               alt="Fachada Residencial Venezia"
               className="w-full h-[400px] object-cover"
             />
@@ -57,8 +57,8 @@ export default function EmpreendimentoSection() {
               </div>
               <div className="bg-[#f8f7f4] p-5 rounded-lg">
                 <Ruler className="text-[#c62828] mb-3" size={24} />
-                <p className="text-2xl font-semibold text-[#1a1a2e]">{EMPREENDIMENTO.areaPrivativaMin} - {EMPREENDIMENTO.areaPrivativaMax}</p>
-                <p className="text-gray-500 text-sm">m² Área Privativa</p>
+                <p className="text-2xl font-semibold text-[#1a1a2e]">{EMPREENDIMENTO.areaPrivativaMin.toFixed(2).replace('.', ',')} – {EMPREENDIMENTO.areaPrivativaMax.toFixed(2).replace('.', ',')} m²</p>
+                <p className="text-gray-500 text-sm">Área Privativa</p>
               </div>
               <div className="bg-[#f8f7f4] p-5 rounded-lg">
                 <Car className="text-[#c62828] mb-3" size={24} />
