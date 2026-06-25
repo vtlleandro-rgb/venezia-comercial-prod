@@ -1,10 +1,11 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import { type Server } from "http";
-import { nanoid } from "nanoid";
 import path from "path";
-import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
+import { fileURLToPath } from "url";
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const viteConfigPath = "../../vite.config";
 
 /**
  * Injeta Open Graph meta tags para páginas de proposta
@@ -46,6 +47,13 @@ async function injectPropostaOGTags(url: string, template: string): Promise<stri
 }
 
 export async function setupVite(app: Express, server: Server) {
+  const [{ nanoid }, { createServer: createViteServer }, { default: viteConfig }] =
+    await Promise.all([
+      import("nanoid"),
+      import("vite"),
+      import(viteConfigPath),
+    ]);
+
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -65,7 +73,7 @@ export async function setupVite(app: Express, server: Server) {
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        currentDir,
         "../..",
         "client",
         "index.html"
@@ -93,8 +101,8 @@ export async function setupVite(app: Express, server: Server) {
 export function serveStatic(app: Express) {
   const distPath =
     process.env.NODE_ENV === "development"
-      ? path.resolve(import.meta.dirname, "../..", "dist", "public")
-      : path.resolve(import.meta.dirname, "public");
+      ? path.resolve(currentDir, "../..", "dist", "public")
+      : path.resolve(currentDir, "public");
   const indexPath = path.resolve(distPath, "index.html");
 
   if (!fs.existsSync(indexPath)) {
