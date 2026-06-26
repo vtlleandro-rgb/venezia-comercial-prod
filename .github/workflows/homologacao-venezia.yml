@@ -63,7 +63,7 @@ jobs:
         run: pnpm build:api
 
       - name: Rodar migrations
-        run: pnpm db:migrate
+        run: pnpm exec tsx scripts/migrate.ts
 
       - name: Rodar seed
         run: pnpm db:seed
