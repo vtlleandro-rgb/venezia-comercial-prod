@@ -1,0 +1,71 @@
+name: Homologacao Venezia Comercial
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  validar:
+    name: Build, testes e banco
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: venezia_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/venezia_test
+      JWT_SECRET: test-jwt-secret
+      ADMIN_PASSWORD: admin-test
+      FRONTEND_URL: http://localhost:4173
+      VITE_API_URL: http://localhost:4173
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Validar tipos
+        run: pnpm check
+
+      - name: Rodar testes
+        run: pnpm test
+
+      - name: Build completo
+        run: pnpm build
+
+      - name: Build API
+        run: pnpm build:api
+
+      - name: Rodar migrations
+        run: pnpm db:migrate
+
+      - name: Rodar seed
+        run: pnpm db:seed
