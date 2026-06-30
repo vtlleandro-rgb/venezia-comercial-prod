@@ -1,6 +1,6 @@
 # STATUS DO PROJETO — RESIDENCIAL VENEZIA
 
-**Última atualização:** 2026-06-29 15:01 BRT  
+**Última atualização:** 2026-06-30 BRT  
 **Responsável técnico:** Claude (Anthropic)  
 **Base de referência:** BASE_OFICIAL_VENEZIA_20260629  
 **Snapshot MD5:** `7d77ce54f5d10a17c260b4288f1670f0`
@@ -16,16 +16,16 @@
 | Diferenciais | 🔒 CONGELADO | E03 — 03_diferenciais.png (2026-06-29) | Claude | Nenhuma |
 | Galeria | 🔒 CONGELADO | E04 — 04_galeria.png (2026-06-29) | Claude | Nenhuma — nav corrigida para "Galeria" |
 | Implantação + Plantas | 🔒 CONGELADO | E05 — 05_plantas.png (2026-06-29) | Claude | Nenhuma |
-| Tabela de Disponibilidade | 🔒 CONGELADO | E06 — 06_tabela.png (2026-06-29) | Claude | Aguarda banco para validar persistência real |
+| Tabela de Disponibilidade | ✅ HOMOLOGADO | E06 + MySQL persistência (2026-06-30) | Claude | — |
 | Simulador CEF | 🔒 CONGELADO | E07 — 07_simulador.png (2026-06-29) | Claude | Nenhuma — cálculo local validado |
-| Dashboard Executivo | 🔒 CONGELADO | E08 — 08_dashboard.png (2026-06-29) | Claude | Aguarda banco para validar persistência real |
+| Dashboard Executivo | ✅ HOMOLOGADO | E08 (2026-06-30) | Claude | — |
 | Localização | 🔒 CONGELADO | E09 — 09_localizacao.png (2026-06-29) | Claude | Nenhuma |
 | Realização e Parceiros | ⚠️ PARCIAL | E10 — captura incompleta (2026-06-29) | Claude | Nova captura isolada |
-| **Banco — Railway MySQL** | 🔄 EM HOMOLOGAÇÃO | — | Claude | Aguardando DATABASE_URL → 9 etapas oficiais |
-| Painel do Corretor (/corretor) | 🔒 BLOQUEADO | — | Claude | Depende de banco + OAuth homologados |
-| Admin Corretores (/admin) | 🔒 BLOQUEADO | — | Claude | Depende de banco + OAuth homologados |
-| Proposta / PDF (/proposta/:codigo) | 🔒 BLOQUEADO | — | Claude | Depende de banco homologado |
-| Deploy / Publicação Final | ⬜ NÃO INICIADO | — | Claude | Depende de todos os módulos anteriores |
+| **Banco — Railway MySQL** | ✅ HOMOLOGADO | Fase 3 completa (2026-06-30) | Claude | — |
+| Painel do Corretor (/corretor) | ✅ HOMOLOGADO | Fase 4 — F4_10 (2026-06-30) | Claude | — |
+| Admin Corretores (/admin) | ✅ HOMOLOGADO | Fase 4 — F4_03 (2026-06-30) | Claude | — |
+| Proposta / PDF (/proposta/:codigo) | ✅ HOMOLOGADO | Fase 4 — PDF com logo (2026-06-30) | Claude | — |
+| Deploy / Publicação Final | 🔄 EM HOMOLOGAÇÃO | — | Claude | Fase 5: OAuth produção + deploy + validação |
 
 ---
 
@@ -86,4 +86,5 @@ PARCIAL → volta para EM HOMOLOGAÇÃO após nova evidência.
 | 2026-06-29 15:01 | Criação inicial com registro pós-homologação visual |
 | 2026-06-29 15:01 | Adição de colunas "Responsável" e "Próxima Etapa" |
 | 2026-06-29 15:01 | Implementação da política de CONGELAMENTO automático |
+| 2026-06-30 | Fase 3 (banco) e Fase 4 (funcional) aprovadas; itens 8/9/10 persistem no MySQL |
 | 2026-06-29 15:01 | Módulos homologados visualmente promovidos para CONGELADO |

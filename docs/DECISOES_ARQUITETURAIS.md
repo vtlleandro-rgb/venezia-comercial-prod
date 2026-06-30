@@ -11,22 +11,17 @@ Cada decisão registra: a escolha feita, o motivo, as alternativas descartadas e
 
 ## DECISÃO 001 — Status das Unidades em localStorage
 
-**Status:** ATIVA  
-**Data:** 2026-06-29  
+**Status:** ~~ATIVA~~ **REVOGADA — substituída por DECISÃO 008**  
+**Data original:** 2026-06-29 | **Data de revogação:** 2026-06-30  
 **Responsável:** Claude  
 **Módulo afetado:** Tabela de Disponibilidade, Dashboard Executivo
 
-**Escolha:** `localStorage` (client-side, sem persistência em banco)
+**Escolha original:** `localStorage` (client-side, sem persistência em banco)
 
-**Motivo:**  
-O sistema é usado por corretores em plantões de vendas presenciais, frequentemente em ambientes com conectividade instável (redes móveis, sinal fraco em stands). A Tabela de Disponibilidade precisa funcionar mesmo sem internet. O localStorage garante operação offline e sincronização automática entre abas via `StorageEvent`.
+**Motivo da revogação (2026-06-30):**  
+Decisão 001 foi tomada como solução inicial para a Fase 2 (interface). Na Fase 4 (homologação funcional), o auditor identificou que o sistema será operado por equipe comercial com múltiplos usuários em dispositivos diferentes. `localStorage` é isolado por navegador — um corretor em um dispositivo não enxerga o status marcado por outro corretor, tornando o sistema inoperável para operação comercial real. A decisão foi revogada e substituída pela DECISÃO 008.
 
-**Alternativas descartadas:**  
-- Persistência imediata em MySQL: descartada porque depende de conexão estável e adiciona latência visível na marcação de unidades durante atendimento ao cliente.  
-- Sincronização híbrida (local + banco): descartada por complexidade desnecessária nesta fase — aumentaria o risco de divergência entre estado local e banco.
-
-**Consequência registrada:**  
-Se o corretor limpar o localStorage (limpar dados do navegador), o status das unidades volta ao padrão do `empreendimento.ts`. Isso é comportamento conhecido e aceito. A solução definitiva de persistência em banco fica para fase posterior, após validação operacional.
+**Ver:** DECISÃO 008 abaixo.
 
 ---
 
@@ -147,8 +142,43 @@ O Manus usava MySQL internamente. A migração para MySQL no Railway preserva co
 
 ---
 
+## DECISÃO 008 — Persistência de Unidades, Vendas e Cancelamentos no MySQL Railway
+
+**Status:** ATIVA  
+**Data:** 2026-06-30  
+**Responsável:** Claude  
+**Módulo afetado:** Tabela de Disponibilidade, Reserva, Venda, Cancelamento  
+**Substitui:** DECISÃO 001
+
+**Escolha:** MySQL Railway via tRPC (3 tabelas: `unidades_status`, `vendas`, `cancelamentos`)
+
+**Motivo:**  
+O auditor identificou durante a Fase 4 de homologação funcional que o sistema será operado por equipe comercial com múltiplos corretores em dispositivos diferentes. `localStorage` é isolado por navegador — um corretor em um dispositivo não enxerga o status marcado por outro. Para operação comercial real, o banco deve ser a fonte de verdade única. A implementação mantém estado local otimista para resposta imediata na UI (sem latência perceptível durante o atendimento), e persiste no banco em background via mutação tRPC.
+
+**Alternativas descartadas:**  
+- Manter localStorage + sincronização eventual: descartado — criaria divergência de estado entre dispositivos durante atendimento simultâneo, com risco de dupla venda da mesma unidade.  
+- Substituir estado local por polling agressivo: descartado por aumentar latência da UI durante atendimento com cliente presente.
+
+**Padrão implementado:**  
+- `unidades.getStatus` — `publicProcedure`, retorna mapa `{ unidadeId: status }` das 12 unidades  
+- `unidades.updateStatus` — `protectedProcedure`, exige `ctx.user` autenticado  
+- `vendas.registrar` / `cancelamentos.registrar` — `protectedProcedure`, exige autenticação  
+- `useUnidadesStatus` — banco Railway é fonte oficial; `DEFAULT_STATUS` (empreendimento.ts) é apenas fallback enquanto o banco carrega  
+- `AuthContext` — mantém estado local otimista + chama mutação tRPC em background
+
+**Critérios de aprovação comprovados (2026-06-30):**  
+- Status alterado persiste após reload: ✅  
+- Status igual em contexto anônimo (outro navegador/aba incógnito): ✅  
+- Venda aparece em `SELECT * FROM vendas`: ✅  
+- Cancelamento aparece em `SELECT * FROM cancelamentos`: ✅  
+- `tsc --noEmit` 0 erros: ✅  
+- Mutations protegidas por autenticação: ✅  
+
+---
+
 ## HISTÓRICO DE VERSÕES DESTE DOCUMENTO
 
 | Versão | Data | Alteração |
 |---|---|---|
 | 1.0 | 2026-06-29 | Criação com 7 decisões iniciais |
+| 1.1 | 2026-06-30 | DECISÃO 001 revogada; DECISÃO 008 adicionada (persistência MySQL para itens 8/9/10) |

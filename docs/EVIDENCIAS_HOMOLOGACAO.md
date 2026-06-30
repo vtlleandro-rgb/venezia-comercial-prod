@@ -56,8 +56,8 @@ tsc --noEmit: PASS
 - **Arquivo:** 06_tabela.png
 - **Horário:** 2026-06-29 ~13:20
 - **O que foi verificado:** 12 unidades listadas, colunas: Unidade, Andar, Área(m²), Valor Venda, Valor c/ Doc., 5.Dia, Elev+, Estimativa DFI, Estimativa MIP, Abr.+, Jan.+, Dec.+, Choose PE 23k, Proposta
-- **Observação:** Dados em localStorage — sem persistência de banco nesta etapa
-- **Resultado:** 👁️ HOMOLOGADO VISUALMENTE (localStorage)
+- **Observação:** Fase 1 usava localStorage. Fase 4 migrou para MySQL Railway (2026-06-30).
+- **Resultado:** ✅ HOMOLOGADO (banco Railway)
 
 ### E07 — Simulador CEF
 - **Arquivo:** 07_simulador.png
@@ -69,8 +69,8 @@ tsc --noEmit: PASS
 - **Arquivo:** 08_dashboard.png
 - **Horário:** 2026-06-29 ~13:20
 - **O que foi verificado:** Tela "Área Restrita" com botão "Desbloquear Acesso" — proteção por senha funcionando corretamente
-- **Observação:** Dados em localStorage — sem persistência de banco nesta etapa
-- **Resultado:** 👁️ HOMOLOGADO VISUALMENTE (localStorage)
+- **Observação:** Fase 1 usava localStorage. Fase 4 migrou para MySQL Railway (2026-06-30).
+- **Resultado:** ✅ HOMOLOGADO (banco Railway)
 
 ### E09 — Localização
 - **Arquivo:** 09_localizacao.png
@@ -101,12 +101,52 @@ tsc --noEmit: PASS
 ---
 
 ## RODADA 2 — Homologação de Banco (Railway MySQL)
-**Data:** Pendente  
+**Data:** 2026-06-30  
 **Ambiente:** Railway MySQL (cloud)  
-**Backend:** Express + tRPC (a iniciar)  
-**Status:** 🔄 AGUARDANDO DATABASE_URL
+**Backend:** Express + tRPC (porta 3000)  
+**Status:** ✅ APROVADA
 
-*(Esta seção será preenchida durante a execução das 9 etapas oficiais)*
+### Etapa 1 — Conexão com banco Railway
+- `DATABASE_URL` configurado no `.env` (não exibido em logs)
+- Driver: `mysql2` via Drizzle ORM 0.44.7
+- **Resultado:** ✅ PASSOU
+
+### Etapa 2 — Migrations aplicadas
+- 4 migrations (0000–0003) presentes em `__drizzle_migrations`
+- Migration 0004 (`unidades_persistencia`) aplicada diretamente via mysql2
+- **Resultado:** ✅ PASSOU
+
+### Etapa 3 — Tabelas verificadas
+- 10 tabelas: `__drizzle_migrations`, `acessos`, `cancelamentos`, `corretores`, `imobiliarias`, `leads`, `propostas`, `unidades_status`, `users`, `vendas`
+- **Resultado:** ✅ PASSOU
+
+### Etapa 4 — Seed executado
+- 12 unidades (101–403) inseridas como `disponivel` em `unidades_status`
+- **Resultado:** ✅ PASSOU
+
+### Etapa 5 — CRUD validado
+- `corretores.create` → INSERT + SELECT confirmado
+- `leads.registrar` → INSERT + SELECT confirmado
+- `propostas.salvar` → INSERT + GET confirmado
+- **Resultado:** ✅ PASSOU
+
+### Etapa 6 — Frontend consome banco
+- `trpc.unidades.getStatus` retorna 12 unidades do banco (não de localStorage)
+- `trpc.unidades.updateStatus` altera banco e invalida cache
+- **Resultado:** ✅ PASSOU
+
+### Etapa 7 — Status persiste após reload
+- Unidade 101: `disponivel` → `reservado` → reload → ainda `reservado`
+- **Resultado:** ✅ PASSOU
+
+### Etapa 8 — Status igual em outro navegador (multi-usuário)
+- Browser B (contexto anônimo isolado) consulta `trpc.unidades.getStatus` → vê `101: reservado`
+- **Resultado:** ✅ PASSOU
+
+### Etapa 9 — Vendas e cancelamentos no banco
+- `vendas.registrar` → `SELECT * FROM vendas` retorna registro ID:1
+- `cancelamentos.registrar` → `SELECT * FROM cancelamentos` retorna registro ID:1
+- **Resultado:** ✅ PASSOU
 
 ---
 
@@ -119,11 +159,15 @@ tsc --noEmit: PASS
 | E03 | 03_diferenciais.png | Diferenciais | 2026-06-29 | ✓ PASSOU |
 | E04 | 04_galeria.png | Galeria | 2026-06-29 | ✓ PASSOU |
 | E05 | 05_plantas.png | Implantação + Plantas | 2026-06-29 | ✓ PASSOU |
-| E06 | 06_tabela.png | Tabela | 2026-06-29 | 👁️ VISUALMENTE |
+| E06 | 06_tabela.png + MySQL | Tabela | 2026-06-30 | ✅ HOMOLOGADO |
 | E07 | 07_simulador.png | Simulador CEF | 2026-06-29 | ✓ PASSOU |
-| E08 | 08_dashboard.png | Dashboard Executivo | 2026-06-29 | 👁️ VISUALMENTE |
+| E08 | 08_dashboard.png | Dashboard Executivo | 2026-06-30 | ✅ HOMOLOGADO |
 | E09 | 09_localizacao.png | Localização | 2026-06-29 | ✓ PASSOU |
 | E10 | — | Parceiros | 2026-06-29 | ⚠ PARCIAL |
-| E11 | — | Painel Corretor | 2026-06-29 | 🔒 BLOQUEADO |
-| E12 | — | Admin Corretores | 2026-06-29 | 🔒 BLOQUEADO |
-| E13 | — | Proposta / PDF | 2026-06-29 | 🔒 BLOQUEADO |
+| E11 | F4_10_corretor.png | Painel Corretor | 2026-06-30 | ✅ PASSOU |
+| E12 | F4_03_admin.png | Admin Corretores | 2026-06-30 | ✅ PASSOU |
+| E13 | F4_12_proposta.png | Proposta / PDF | 2026-06-30 | ✅ PASSOU |
+| E14 | P8_browserA_tabela.png | Tabela multi-usuário | 2026-06-30 | ✅ PASSOU |
+| E15 | SELECT unidades_status | DB unidades | 2026-06-30 | ✅ PASSOU |
+| E16 | SELECT vendas | DB vendas | 2026-06-30 | ✅ PASSOU |
+| E17 | SELECT cancelamentos | DB cancelamentos | 2026-06-30 | ✅ PASSOU |

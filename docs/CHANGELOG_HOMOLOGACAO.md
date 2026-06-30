@@ -24,6 +24,24 @@ Descrições genéricas ("ajustes", "melhorias", "correções diversas") são **
 
 ## REGISTRO DE ALTERAÇÕES
 
+### 2026-06-30 — drizzle/schema.ts + migration 0004 + server/db.ts + server/routers.ts + useUnidadesStatus.ts + AuthContext.tsx
+
+- **Módulo impactado:** Reserva (item 8), Venda (item 9), Cancelamento (item 10) da Homologação Fase 4
+- **Status anterior:** Itens 8/9/10 PARCIAL — persistência apenas em localStorage (inoperável para equipe comercial multi-usuário)
+- **Motivo:** Auditor identificou que localStorage é isolado por navegador — um corretor não enxerga o status marcado por outro. Sistema destinado a equipe com múltiplos dispositivos exige banco como fonte de verdade única.
+- **O que foi alterado:**
+  - `drizzle/schema.ts`: +3 tabelas (`unidades_status`, `vendas`, `cancelamentos`) com `mysqlEnum` confirmado compatível com Drizzle/MySQL
+  - `drizzle/0004_unidades_persistencia.sql`: migration com CREATE TABLE + seed de 12 unidades (`101`–`403`) como `disponivel`
+  - `drizzle/meta/_journal.json`: entrada idx=4 registrada
+  - `server/db.ts`: +6 funções (`getUnidadesStatus`, `updateUnidadeStatus`, `registrarVenda`, `listVendas`, `registrarCancelamento`, `listCancelamentos`)
+  - `server/routers.ts`: +3 routers; mutations com `protectedProcedure`; `getStatus` com `publicProcedure`
+  - `useUnidadesStatus.ts`: reescrito — banco Railway é fonte oficial; localStorage removido como fonte de verdade
+  - `AuthContext.tsx`: `salvarDadosVenda` e `addCancelamento` persistem no banco via tRPC mutation (estado otimista local mantido)
+- **Evidência:** `tsc --noEmit` PASS + SELECT confirmado no banco + teste multi-navegador PASSOU (commit 00b228a)
+- **Autorização:** Auditor externo — sessão 2026-06-30
+
+---
+
 ### 2026-06-29 — client/src/components/Navigation.tsx
 
 - **Módulo impactado:** Galeria (navegação lateral)
