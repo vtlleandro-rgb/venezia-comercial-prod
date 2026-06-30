@@ -1,6 +1,6 @@
 # STATUS DO PROJETO — RESIDENCIAL VENEZIA
 
-**Última atualização:** 2026-06-30 BRT  
+**Última atualização:** 2026-06-30 (auth própria) BRT  
 **Responsável técnico:** Claude (Anthropic)  
 **Base de referência:** BASE_OFICIAL_VENEZIA_20260629  
 **Snapshot MD5:** `7d77ce54f5d10a17c260b4288f1670f0`
@@ -25,7 +25,7 @@
 | Painel do Corretor (/corretor) | ✅ HOMOLOGADO | Fase 4 — F4_10 (2026-06-30) | Claude | — |
 | Admin Corretores (/admin) | ✅ HOMOLOGADO | Fase 4 — F4_03 (2026-06-30) | Claude | — |
 | Proposta / PDF (/proposta/:codigo) | ✅ HOMOLOGADO | Fase 4 — PDF com logo (2026-06-30) | Claude | — |
-| Deploy / Publicação Final | 🔄 EM HOMOLOGAÇÃO | — | Claude | Fase 5: OAuth produção + deploy + validação |
+| Deploy / Publicação Final | 🔄 EM HOMOLOGAÇÃO | — | Claude | Fase 5: deploy + smoke test + Termo Final |
 
 ---
 

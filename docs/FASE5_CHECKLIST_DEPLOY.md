@@ -21,9 +21,9 @@ Nunca colocar no repositório Git, nunca em `.env` commitado.
 | `NODE_ENV` | ✅ Sim | `production` (fixo — nunca alterar) |
 | `DATABASE_URL` | ✅ Sim | Mesma URL Railway já configurada localmente (`.env` local) |
 | `JWT_SECRET` | ✅ Sim | String aleatória segura — mínimo 32 caracteres. Gerar com: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
-| `OAUTH_SERVER_URL` | ✅ Sim | URL do servidor OAuth (ver seção 4 abaixo) |
-| `VITE_APP_ID` | ✅ Sim | App ID registrado no provider OAuth (ver seção 6 abaixo) |
-| `OWNER_OPEN_ID` | ✅ Sim | OpenId do usuário administrador principal (ver seção 3 abaixo) |
+| ~~`OAUTH_SERVER_URL`~~ | ❌ Removida | OAuth substituído por autenticação própria (DECISÃO 009) |
+| ~~`VITE_APP_ID`~~ | ❌ Removida | Não mais necessária |
+| ~~`OWNER_OPEN_ID`~~ | ❌ Removida | Admin criado via `scripts/create-admin.ts` |
 | `CHROMIUM_PATH` | ✅ Sim | Caminho do Chromium no servidor — ver seção 7 abaixo |
 | `PORT` | Opcional | Porta do servidor Express. Se não definido: `3000`. Railway define automaticamente. |
 | `LOCAL_AUTH_BYPASS` | ❌ Nunca | **Não definir.** Se presente com valor `true`, remove toda a proteção de autenticação. |
@@ -32,87 +32,39 @@ Nunca colocar no repositório Git, nunca em `.env` commitado.
 
 ## 2. VARIÁVEIS DE AMBIENTE — FRONTEND (build Vite)
 
-Estas variáveis são embutidas no bundle JavaScript durante o `vite build`.  
-No Railway (se build acontece no servidor): definir como variáveis de ambiente do serviço.  
-No Vercel (se frontend separado): definir no painel do projeto como variáveis de build.
+Com autenticação própria (DECISÃO 009), não há mais variáveis OAuth obrigatórias no frontend.
 
-| Variável | Obrigatória | Valor / Como obter |
+| Variável | Obrigatória | Valor |
 |---|---|---|
-| `VITE_OAUTH_PORTAL_URL` | ✅ Sim | URL do portal OAuth onde o usuário faz login (ver seção 5 abaixo) |
-| `VITE_APP_ID` | ✅ Sim | Mesmo App ID do servidor — provider OAuth registra este ID |
-| `VITE_LOCAL_AUTH_BYPASS` | ❌ Nunca | **Não definir.** Ativa bypass no frontend, removendo guard de autenticação. |
+| `VITE_LOCAL_AUTH_BYPASS` | ❌ Nunca | **Não definir.** Ativa bypass no frontend. |
 
-> **Atenção:** Variáveis `VITE_*` são públicas — ficam visíveis no bundle JS.  
-> Nunca colocar segredos (JWT_SECRET, DATABASE_URL) em variáveis VITE_.
+> Variáveis `VITE_*` são públicas — nunca colocar segredos nelas.
 
 ---
 
-## 3. COMO OBTER / DEFINIR `OWNER_OPEN_ID`
+## 3. CRIAR USUÁRIO ADMIN INICIAL
 
-`OWNER_OPEN_ID` define qual usuário recebe automaticamente a role `admin` ao fazer login pela primeira vez. Sem isso, o primeiro login cria um usuário comum sem acesso ao painel `/admin/corretores`.
+Admin criado via script controlado (senha não commitada):
 
-**Procedimento:**
-
-1. Fazer o deploy sem `OWNER_OPEN_ID` (temporariamente)
-2. Fazer login com o OAuth do usuário administrador (Leandro)
-3. Consultar o banco Railway:
-   ```sql
-   SELECT open_id, name, email FROM users ORDER BY created_at LIMIT 5;
-   ```
-4. Copiar o valor de `open_id` do usuário administrador
-5. Definir `OWNER_OPEN_ID=<valor copiado>` nas variáveis do servidor
-6. Reiniciar o servidor
-7. Fazer login novamente — a role `admin` é atribuída no próximo login
-
-**Alternativa (sem reiniciar):**
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'vtlleandro@gmail.com';
+```bash
+# Executar no servidor após deploy e migration 0005 aplicada
+ADMIN_EMAIL=vtlleandro@gmail.com ADMIN_PASSWORD='SenhaSegura123!' \
+  node -e "require('./dist/scripts/create-admin.js')"
 ```
 
----
-
-## 4. ONDE CONFIGURAR `OAUTH_SERVER_URL`
-
-`OAUTH_SERVER_URL` é a URL base do servidor OAuth que expõe o serviço gRPC-Web `webdev.v1.WebDevAuthPublicService`.
-
-O backend usa dois endpoints nessa URL:
-- `POST /webdev.v1.WebDevAuthPublicService/ExchangeToken` — troca code por token
-- `POST /webdev.v1.WebDevAuthPublicService/GetUserInfo` — obtém dados do usuário
-
-**O provider OAuth original era o Manus.** Para produção, é necessário ter acesso a um provider compatível com este protocolo.
-
-**Opções:**
-1. **Se o cliente tem acesso ao provider OAuth original do Manus:** usar a URL fornecida por eles
-2. **Se precisar de um novo provider:** contatar o time responsável pelo `webdev.v1.WebDevAuthPublicService` para obter credenciais de produção
-
-**Onde configurar:** variável de ambiente no servidor (Railway, Render, VPS) — nunca no frontend.
-
----
-
-## 5. ONDE CONFIGURAR `VITE_OAUTH_PORTAL_URL`
-
-`VITE_OAUTH_PORTAL_URL` é a URL do portal onde o usuário clica "Fazer Login" e é redirecionado para autenticar.
-
-O frontend constrói a URL de login assim:
-```
-${VITE_OAUTH_PORTAL_URL}/app-auth?appId=${VITE_APP_ID}&redirectUri=${origin}/api/oauth/callback&state=${btoa(redirectUri)}
+Ou localmente apontando para o banco Railway:
+```bash
+ADMIN_EMAIL=vtlleandro@gmail.com ADMIN_PASSWORD='SenhaSegura123!' \
+  npx tsx scripts/create-admin.ts
 ```
 
-**Onde configurar:** variável de ambiente de build (Vite). No Railway: adicionar junto com as demais variáveis antes do `vite build`. No Vercel: painel > Settings > Environment Variables.
+Após o primeiro login, trocar a senha via: `POST /api/auth/change-password`
 
 ---
 
-## 6. ONDE CONFIGURAR `VITE_APP_ID`
+## 4–6. (OAuth removido — DECISÃO 009)
 
-`VITE_APP_ID` é o identificador do aplicativo registrado no provider OAuth.
-
-- É o mesmo valor usado no servidor (`ENV.appId`) e no frontend (`import.meta.env.VITE_APP_ID`)
-- Obtido no painel do provider OAuth quando o app foi registrado
-- O provider valida que o `appId` no callback corresponde ao app registrado
-
-**Onde configurar:** variável de ambiente em **dois lugares**:
-1. Servidor (como `VITE_APP_ID`) — usado pelo `sdk.ts` via `ENV.appId`
-2. Build Vite (como `VITE_APP_ID`) — embutido no bundle frontend
+Seções 4, 5 e 6 do checklist original referenciavam `OAUTH_SERVER_URL`, `VITE_OAUTH_PORTAL_URL` e `VITE_APP_ID`. Essas variáveis foram removidas em 2026-06-30 com a implementação da autenticação própria. Ver DECISÃO 009 em `DECISOES_ARQUITETURAIS.md`.
 
 ---
 

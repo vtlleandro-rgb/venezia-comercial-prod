@@ -176,9 +176,46 @@ O auditor identificou durante a Fase 4 de homologação funcional que o sistema 
 
 ---
 
+
+## DECISÃO 009 — Autenticação Própria por E-mail e Senha (substitui OAuth)
+
+**Status:** ATIVA  
+**Data:** 2026-06-30  
+**Responsável:** Claude  
+**Módulo afetado:** Autenticação, Painel do Corretor, Admin Corretores  
+**Substitui:** DECISÃO 002 (OAuth como Opcional) — OAuth removido operacionalmente nesta versão
+
+**Escolha:** Autenticação própria com e-mail/senha + JWT cookie + `crypto.scrypt` (nativo Node.js)
+
+**Motivo:**  
+Após Fase 4 de homologação, o único bloqueio para produção era `OAUTH_SERVER_URL` — dependência do servidor Manus que não está mais acessível. A alternativa Google OAuth exigiria configuração de Google Cloud Console e aprovação de tela de consentimento, criando outro ciclo de bloqueio externo. A autenticação própria elimina todas as dependências externas de autenticação, simplifica o `.env` de produção de 8 para 4 variáveis, e não altera nenhum módulo comercial já homologado.
+
+**Alternativas descartadas:**  
+- Continuar com OAuth Manus: descartado — provider não acessível em produção.  
+- Google OAuth: descartado — dependência de Google Cloud Console + aprovação de app; cria novo ciclo de bloqueio.
+
+**Implementação:**  
+- `crypto.scrypt` (nativo Node.js, sem dependência nova) para hash de senha com salt aleatório  
+- Comparação em tempo constante com `timingSafeEqual` (proteção contra timing attack)  
+- Cookie de sessão JWT assinado com `JWT_SECRET` (mesma infraestrutura anterior)  
+- Rota `POST /api/auth/login` — emite cookie após validar e-mail + senha  
+- Rota `POST /api/auth/change-password` — troca de senha exige sessão válida + senha atual  
+- `scripts/create-admin.ts` — script controlado para criar admin inicial sem commitar senha  
+- `getLoginUrl()` → `"/login"` (rota interna SPA, sem variáveis VITE_OAUTH_*)  
+
+**Variáveis removidas do `.env` de produção:**  
+`OAUTH_SERVER_URL`, `VITE_OAUTH_PORTAL_URL`, `VITE_APP_ID`, `OWNER_OPEN_ID`  
+
+**Variáveis mantidas:**  
+`NODE_ENV`, `DATABASE_URL`, `JWT_SECRET`, `CHROMIUM_PATH`, `PORT`
+
+**OAuth:** Pode ser reimplementado em versão futura (v2) se necessário — a infraestrutura de cookie/JWT permanece compatível.
+
+---
 ## HISTÓRICO DE VERSÕES DESTE DOCUMENTO
 
 | Versão | Data | Alteração |
 |---|---|---|
 | 1.0 | 2026-06-29 | Criação com 7 decisões iniciais |
 | 1.1 | 2026-06-30 | DECISÃO 001 revogada; DECISÃO 008 adicionada (persistência MySQL para itens 8/9/10) |
+| 1.2 | 2026-06-30 | DECISÃO 009 adicionada (autenticação própria substitui OAuth) |

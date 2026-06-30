@@ -52,6 +52,7 @@ Nenhum item pode ser marcado sem evidência objetiva em `EVIDENCIAS_HOMOLOGACAO.
 | Commit SHA registrado | ☐ PENDENTE | Git não inicializado |
 | Tag Git `v1.0` criada | ☐ PENDENTE | Git não inicializado |
 | GitHub Actions verde | ☐ PENDENTE | Repositório remoto não configurado |
+| Autenticação própria homologada | ✅ PASSOU | smoke test 9 itens sem bypass (2026-06-30) |
 
 ### FASE 3 — Interface Comercial
 
@@ -92,7 +93,7 @@ Nenhum item pode ser marcado sem evidência objetiva em `EVIDENCIAS_HOMOLOGACAO.
 
 | Item | Status | Evidência |
 |---|---|---|
-| Login OAuth funcional | ⚠️ LOCAL BYPASS | Bypass LOCAL_AUTH_BYPASS=true (dev); OAuth produção pendente configuração OAUTH_SERVER_URL |
+| Login por e-mail/senha funcional | ✅ PASSOU | Auth própria crypto.scrypt + JWT cookie (2026-06-30) — sem dependência OAuth |
 | Painel do Corretor (/corretor) funcional | ✅ PASSOU | Fase 4 — F4_10 (2026-06-30) |
 | Painel Admin (/admin/corretores) funcional | ✅ PASSOU | Fase 4 — F4_03 (2026-06-30) |
 | Captura de lead pelo formulário público | ✅ PASSOU | Fase 4 — F4_06 (2026-06-30) |
@@ -137,3 +138,4 @@ Nenhum item pode ser marcado sem evidência objetiva em `EVIDENCIAS_HOMOLOGACAO.
 |---|---|
 | 2026-06-29 | Termo criado — publicação em produção BLOQUEADA |
 | 2026-06-30 | Fases 1–4 aprovadas (banco + fluxos funcionais + persistência MySQL); status atualizado para EM PROGRESSO |
+| 2026-06-30 | Autenticação própria e-mail/senha implementada e homologada (DECISÃO 009); OAuth removido |

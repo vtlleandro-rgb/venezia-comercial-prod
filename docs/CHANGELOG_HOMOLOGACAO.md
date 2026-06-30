@@ -24,6 +24,27 @@ Descrições genéricas ("ajustes", "melhorias", "correções diversas") são **
 
 ## REGISTRO DE ALTERAÇÕES
 
+### 2026-06-30 — server/_core/sdk.ts + server/_core/oauth.ts + server/_core/env.ts + server/db.ts + drizzle/schema.ts + drizzle/0005_auth_propria.sql + client/src/const.ts + client/src/App.tsx + client/src/pages/Login.tsx + scripts/create-admin.ts
+
+- **Módulo impactado:** Autenticação (fluxo de login/logout para Painel Corretor e Admin)
+- **Status anterior:** Login dependia de `OAUTH_SERVER_URL` (provider Manus) — não disponível em produção
+- **Motivo:** Eliminar dependência de OAuth externo. DECISÃO 009 — autenticação própria por e-mail/senha.
+- **O que foi alterado:**
+  - `schema.ts`: +`password_hash varchar(255)` na tabela `users`
+  - `0005_auth_propria.sql`: `ALTER TABLE users ADD COLUMN password_hash` (só estrutura, sem dados)
+  - `sdk.ts`: removida lógica OAuth/Manus; adicionado `hashPassword` e `verifyPassword` com `crypto.scrypt`
+  - `oauth.ts`: removido callback OAuth; criado `POST /api/auth/login`, `POST /api/auth/change-password`, `GET /api/auth/setup-status`
+  - `env.ts`: removidas variáveis `oAuthServerUrl`, `ownerOpenId`, `appId`
+  - `db.ts`: +`getUserByEmail`, +`setPasswordHash`, +`countAdmins`; removida lógica de `ownerOpenId`
+  - `const.ts`: `getLoginUrl()` → `"/login"` (rota interna, sem VITE_OAUTH_*)
+  - `App.tsx`: registrada rota `/login`
+  - `Login.tsx`: formulário e-mail/senha com visual Venezia
+  - `scripts/create-admin.ts`: script controlado; senha recebida via env var, nunca commitada
+- **Evidência:** smoke test 9 itens PASSOU sem LOCAL_AUTH_BYPASS (commit 5b86189)
+- **Autorização:** Auditor externo — sessão 2026-06-30
+
+---
+
 ### 2026-06-30 — drizzle/schema.ts + migration 0004 + server/db.ts + server/routers.ts + useUnidadesStatus.ts + AuthContext.tsx
 
 - **Módulo impactado:** Reserva (item 8), Venda (item 9), Cancelamento (item 10) da Homologação Fase 4
