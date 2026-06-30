@@ -21,6 +21,7 @@ const LOCAL_BYPASS_USER: User = {
   name: "Dev Admin (Homologação)",
   email: "dev@venezia.local",
   loginMethod: "bypass",
+  passwordHash: null,
   role: "admin",
   createdAt: new Date(),
   updatedAt: new Date(),

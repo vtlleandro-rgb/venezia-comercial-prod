@@ -36,6 +36,13 @@
       "when": 1751270400000,
       "tag": "0004_unidades_persistencia",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1751356800000,
+      "tag": "0005_auth_propria",
+      "breakpoints": true
     }
   ]
 }

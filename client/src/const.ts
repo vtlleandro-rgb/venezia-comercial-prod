@@ -1,23 +1,5 @@
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
-// Gera a URL de login a partir das variáveis de ambiente.
-// VITE_OAUTH_PORTAL_URL e VITE_APP_ID devem ser definidas no .env
-export const getLoginUrl = () => {
-  const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL ?? "";
-  const appId = import.meta.env.VITE_APP_ID ?? "";
-  const redirectUri = `${window.location.origin}/api/oauth/callback`;
-  const state = btoa(redirectUri);
-
-  if (!oauthPortalUrl || !appId) {
-    // OAuth não configurado — redireciona para a raiz como fallback seguro
-    return "/";
-  }
-
-  const url = new URL(`${oauthPortalUrl}/app-auth`);
-  url.searchParams.set("appId", appId);
-  url.searchParams.set("redirectUri", redirectUri);
-  url.searchParams.set("state", state);
-  url.searchParams.set("type", "signIn");
-
-  return url.toString();
-};
+// Rota de login interna — autenticação própria por e-mail/senha.
+// Substituiu dependência de OAuth externo (Manus) em 2026-06-30. Ver DECISAO 009.
+export const getLoginUrl = () => "/login";
