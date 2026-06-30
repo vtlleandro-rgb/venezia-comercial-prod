@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1780537350355,
+      "tag": "0000_supreme_flatman",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1780537538168,
+      "tag": "0001_colorful_gateway",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1780542874285,
+      "tag": "0002_puzzling_pestilence",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1780549029376,
+      "tag": "0003_dazzling_greymalkin",
+      "breakpoints": true
+    }
+  ]
+}

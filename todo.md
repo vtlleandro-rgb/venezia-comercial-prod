@@ -1,0 +1,75 @@
+# Project TODO
+
+- [x] Nota "Apto 101 (PNE)" na tabela de vendas
+- [x] Subtítulo do hero atualizado para "56,30 a 60,85 m²"
+- [x] Opção de reverter "Reservado" para "Disponível" com senha
+- [x] Upgrade full-stack com banco de dados
+- [x] Sistema de link personalizado por corretor (tabela corretores + slug)
+- [x] Corretor aparece no rodapé ao acessar via link personalizado
+- [x] WhatsApp direciona para o corretor correto
+- [x] Captura de leads vinculada ao corretor
+- [x] Painel administrativo de corretores e leads
+- [x] Integração do painel admin com autenticação real (OAuth + adminProcedure)
+- [x] Corrigir erro de permissão (10002) no cadastro de corretores
+- [x] Padronizar formatação de áreas m² (vírgula decimal, duas casas, padrão brasileiro)
+- [x] Implementar cancelamento de reserva com motivo, data/hora, usuário e histórico
+- [x] Sincronizar módulos tabela/disponibilidade/reservas em tempo real
+- [x] Criar proposta comercial profissional no simulador (dados empreendimento + unidade + condição + corretor)
+- [x] Exportação da proposta: PDF, impressão, WhatsApp, e-mail
+- [x] Implementar histórico de alterações (audit log) com data, hora e usuário
+- [x] Substituir incorporadora por SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA em toda a proposta
+- [x] Simulador financeiro integrado dentro do módulo Gerar Proposta (com cálculo automático)
+- [x] Proposta puxa automaticamente: valor tabela, área, tipologia, torre/bloco, unidade, dados do corretor logado
+- [x] Botão flutuante de WhatsApp com dados do corretor (link personalizado) ou atendimento padrão
+- [x] Painel do corretor na área restrita (meus dados, link, leads, propostas, reservas, atendimentos)
+- [x] Corretor pode editar: telefone, WhatsApp, foto, CRECI, e-mail
+- [x] Vinculação automática de leads com dados completos (unidade interesse, simulação, proposta, data/hora)
+- [x] Refatorar PropostaComercial: integrar Simulador CEF diretamente (mesma base de cálculo)
+- [x] Bloco 1: Resumo da unidade com empreendimento, torre, unidade, tipologia, área, valor, planta e imagem
+- [x] Bloco 2: Condição comercial com destaque visual (entrada 20%, parcela entrada, reforço chaves)
+- [x] Bloco 3: Simulador CEF integrado (saldo financiado, prazo, taxa, parcela estimada, sistema Price+TR)
+- [x] Bloco 4: Detalhamento do financiamento (amortização, juros, seguros MIP/DFI, taxa admin, total)
+- [x] Bloco 5: Cronograma de pagamento visual (timeline: ato → parcelas → chaves → assinatura → financiamento)
+- [x] Bloco 6: Dados do corretor automáticos (nome, CRECI, WhatsApp, telefone, e-mail, imobiliária)
+- [x] Bloco 7: Exportação completa (visualizar, imprimir, PDF, WhatsApp, e-mail)
+- [x] Quadro de destaque: "Seu apartamento próprio a partir de R$ X de entrada e parcelas de R$ Y/mês"
+- [x] Layout premium com logo Venezia, texto SPE-VENEZIA, ícones financeiros, quadros de destaque
+- [x] Integrar mesmo simulador da página pública dentro da proposta (não criar cálculo separado)
+- [x] Slider dinâmico do valor do imóvel na proposta com atualização em tempo real
+- [x] Bloco DURANTE A OBRA: entrada 20%, parcelamento da entrada (48x), valor parcela, reforço
+- [x] Bloco FINANCIAMENTO CEF: financiamento 80%, prazo, sistema Price+TR, parcela estimada, taxa
+- [x] Cursor atualiza automaticamente todos os valores sem clicar em botão
+- [x] PDF exportado com valores selecionados no momento da geração
+- [x] Dados do corretor automáticos na proposta (nome, CRECI, WhatsApp, telefone, e-mail, imobiliária)
+- [x] Testar: slider move → entrada 20% muda → parcela entrada muda → financiamento 80% muda → parcela financiamento muda
+- [x] Corrigir PDF: cores apagadas, fundos que somem, logos com baixa qualidade
+- [x] Forçar CSS print-color-adjust e -webkit-print-color-adjust para preservar backgrounds
+- [x] Garantir que imagens/logos carreguem com resolução adequada no PDF
+- [x] Cards financeiros com destaque visual no PDF (mesma aparência do site)
+- [x] Compartilhamento WhatsApp com PDF colorido ou link de visualização online
+- [x] Compartilhamento e-mail com proposta HTML inline mantendo layout visual
+- [x] Testar fidelidade visual: site vs PDF vs WhatsApp vs e-mail
+- [x] Rota de propostas salvas no banco com código único (VNZ-xxx)
+- [x] Página de visualização online da proposta (/proposta/:codigo)
+- [x] Compartilhamento WhatsApp e e-mail inclui link de visualização online
+- [x] Instalar Puppeteer e criar endpoint server-side para geração de PDF de alta qualidade
+- [x] Endpoint /api/propostas/:codigo/pdf que renderiza HTML salvo e retorna PDF
+- [x] Gerar thumbnail/screenshot da proposta para preview visual
+- [x] Adicionar Open Graph meta tags na página /proposta/:codigo para card visual no WhatsApp
+- [x] Integrar botão "Baixar PDF" no frontend que chama endpoint server-side
+- [x] PDF gerado com fidelidade visual total (cores, fundos, logos, tipografia)
+- [x] Animação de carregamento personalizada enquanto o PDF é gerado no servidor
+- [x] Simulador: mudar parcelamento da entrada de 48x para 36x
+- [x] Simulador: adicionar campo de Reforços (abatido da entrada antes do parcelamento, NÃO diminui financiamento)
+- [x] Simulador: cursor de entrada inicia em 20%, não permite menos de 20%, recalcula automaticamente
+- [x] Simulador: financiamento = Valor Unidade - Entrada Total, máximo 80%, nunca ultrapassar
+- [x] Resumo da simulação: exibir valor unidade, % entrada, valor entrada, reforços, saldo parcelado, 36x, parcela, % financiado, valor financiado, total operação
+- [x] Correção do PDF: fallback client-side (html2canvas + jsPDF) quando servidor não tem Chromium
+- [x] PDF deve incluir: logo Venezia, logo ARTEÁ, dados unidade, resumo entrada, reforços, entrada 36x, financiamento, validade da proposta
+- [x] Rodapé institucional "Realização e Parceiros" com logos ARTEÁ, RB Construtora, Blue Real Estate, SPE Venezia
+- [x] Corrigir geração de PDF em dispositivos móveis (iPhone/Safari, Android/Chrome)
+- [x] Incluir logos ARTEÁ e Blue Real Estate na proposta PDF (cabeçalho e rodapé)
+- [x] Correção: substituir logo Blue Real Estate no rodapé pela versão oficial (fundo branco)
+- [x] Correção: substituir logo Venezia no rodapé pela versão oficial (gôndola, fundo preto)
+- [x] Correção: substituir logo Blue Real Estate na proposta PDF pela versão oficial
+- [x] Correção: PDF mobile — corrigir geração corrompida/erro em Android e iPhone

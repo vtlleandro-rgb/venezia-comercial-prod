@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "venezia-homologacao",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/Users/leandrodossantos/Claude/Projects/venezia-comercial/node_modules/.bin/vite", "--port", "5174", "--host", "127.0.0.1"],
+      "port": 5174,
+      "cwd": "/Users/leandrodossantos/Claude/Projects/venezia-comercial"
+    }
+  ]
+}
