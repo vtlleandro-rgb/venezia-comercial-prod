@@ -1,6 +1,18 @@
+import { execSync } from "child_process";
 import puppeteer from "puppeteer-core";
 
-const CHROMIUM_PATH = process.env.CHROMIUM_PATH || "/usr/bin/chromium";
+function resolveChromiumPath(): string {
+  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
+  for (const cmd of ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"]) {
+    try {
+      const p = execSync(`which ${cmd}`, { stdio: ["pipe", "pipe", "ignore"] }).toString().trim();
+      if (p) return p;
+    } catch { /* try next */ }
+  }
+  return "/usr/bin/chromium";
+}
+
+const CHROMIUM_PATH = resolveChromiumPath();
 
 interface PdfOptions {
   htmlContent: string;

@@ -224,7 +224,7 @@ export default function TabelaSection() {
             ) : (
               <span className="inline-flex items-center gap-1.5">
                 <Lock size={14} />
-                Clique no status de uma unidade para alterar (requer senha)
+                Faça login como admin ou gerente para alterar status
               </span>
             )}
           </p>
@@ -360,7 +360,7 @@ export default function TabelaSection() {
                       <button
                         onClick={() => handleStatusChange(unidade.id)}
                         className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium border transition-all duration-200 hover:scale-105 active:scale-95 ${statusColors[unidade.status]}`}
-                        title={canManage ? `Clique para alterar status (atual: ${statusLabels[unidade.status]})` : "Requer senha para alterar"}
+                        title={canManage ? `Clique para alterar status (atual: ${statusLabels[unidade.status]})` : "Faça login como admin ou gerente para alterar"}
                       >
                         <StatusIcon size={12} />
                         {statusLabels[unidade.status]}
@@ -420,7 +420,7 @@ export default function TabelaSection() {
             <span className="w-3 h-3 rounded-full bg-red-400"></span> Vendido
           </span>
           <span className="ml-auto text-gray-400 italic">
-            {canManage ? "Sessão autenticada" : "Protegido por senha"}
+            {canManage ? "Sessão autenticada" : <a href="/login" className="text-amber-700 hover:underline">Fazer login</a>}
           </span>
         </div>
 
