@@ -49,7 +49,7 @@ export default function Login() {
           <img
             src="/assets/venezia/logo-venezia.webp"
             alt="Residencial Venezia"
-            className="h-14 mx-auto mb-6 object-contain"
+            className="h-14 mx-auto mb-6 object-contain brightness-0 invert"
           />
           <h1 className="text-xl font-light text-stone-100 tracking-widest uppercase">
             Área Restrita

@@ -122,15 +122,34 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
     : "";
 
   // ===== GERAR HTML DA PROPOSTA =====
-  const gerarHtmlProposta = useCallback(() => {
+  // Converte imagem para data URL base64 — garante carregamento no Puppeteer server-side
+  const toBase64Url = useCallback(async (path: string): Promise<string> => {
+    try {
+      const url = path.startsWith("http") ? path : `${window.location.origin}${path}`;
+      const res = await fetch(url);
+      if (!res.ok) return url;
+      const blob = await res.blob();
+      return await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(url);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return path;
+    }
+  }, []);
+
+  const gerarHtmlProposta = useCallback(async () => {
     const dataFormatada = new Date().toLocaleDateString("pt-BR");
     const horaFormatada = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     const areaFormatada = unidade ? unidade.area.toFixed(2).replace(".", ",") : `${EMPREENDIMENTO.areaPrivativaMin.toFixed(2).replace(".", ",")} a ${EMPREENDIMENTO.areaPrivativaMax.toFixed(2).replace(".", ",")}`;
 
-    const origin = window.location.origin;
-    const logoVeneziaUrl = IMAGENS.logoVeneziaOficial.startsWith("http") ? IMAGENS.logoVeneziaOficial : `${origin}${IMAGENS.logoVeneziaOficial}`;
-    const logoArteaUrl = IMAGENS.logoArteaColor.startsWith("http") ? IMAGENS.logoArteaColor : `${origin}${IMAGENS.logoArteaColor}`;
-    const logoBlueUrl = IMAGENS.logoBlueRealEstate.startsWith("http") ? IMAGENS.logoBlueRealEstate : `${origin}${IMAGENS.logoBlueRealEstate}`;
+    const [logoVeneziaUrl, logoArteaUrl, logoBlueUrl] = await Promise.all([
+      toBase64Url(IMAGENS.logoVeneziaOficial),
+      toBase64Url(IMAGENS.logoArteaColor),
+      toBase64Url(IMAGENS.logoBlueRealEstate),
+    ]);
 
     return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Proposta Comercial - Residencial Venezia</title>
@@ -310,8 +329,8 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
   }, [simulacao, unidade, tipologia, comprador, cpf, telefoneCliente, corretorNome, corretorCreci, corretorWhatsapp, corretorTelefone, corretorEmail, imobiliaria, observacoes, prazoAnos]);
 
   // ===== AÇÕES =====
-  const handleVisualizar = useCallback(() => {
-    const html = gerarHtmlProposta();
+  const handleVisualizar = useCallback(async () => {
+    const html = await gerarHtmlProposta();
     const win = window.open("", "_blank");
     if (win) {
       win.document.write(html);
@@ -322,7 +341,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
 
   // Baixar PDF server-side (alta qualidade via Puppeteer)
   const handleBaixarPDF = useCallback(async () => {
-    const html = gerarHtmlProposta();
+    const html = await gerarHtmlProposta();
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     setPdfLoading(true);
     setPdfProgress(0);
@@ -413,7 +432,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
   }, [gerarHtmlProposta, salvarPropostaMutation, corretorData, comprador, simulacao, unidade]);
 
   const handleGerarPDF = useCallback(async () => {
-    const html = gerarHtmlProposta();
+    const html = await gerarHtmlProposta();
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile) {
@@ -500,7 +519,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
 
   // Salvar proposta online e gerar link
   const handleSalvarECompartilhar = useCallback(async (canal: "whatsapp" | "email") => {
-    const html = gerarHtmlProposta();
+    const html = await gerarHtmlProposta();
     try {
       const result = await salvarPropostaMutation.mutateAsync({
         htmlContent: html,
