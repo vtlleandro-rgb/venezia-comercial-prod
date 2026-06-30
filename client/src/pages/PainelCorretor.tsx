@@ -80,9 +80,15 @@ export default function PainelCorretor() {
     );
   }
 
-  // Não autenticado
+  // Não autenticado — useAuth já trata o redirect, mas PainelCorretor
+  // tem guard próprio. Só redireciona se bypass não estiver ativo.
   if (!isAuthenticated) {
-    window.location.href = getLoginUrl();
+    const bypassAtivo =
+      import.meta.env.DEV === true &&
+      import.meta.env.VITE_LOCAL_AUTH_BYPASS === "true";
+    if (!bypassAtivo) {
+      window.location.href = getLoginUrl();
+    }
     return null;
   }
 
