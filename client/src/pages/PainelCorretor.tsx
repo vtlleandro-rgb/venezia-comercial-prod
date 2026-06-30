@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
 export default function PainelCorretor() {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { user, loading: authLoading, isAuthenticated, canManage } = useAuth();
   const [activeTab, setActiveTab] = useState<"dados" | "leads" | "stats">("dados");
   const [editMode, setEditMode] = useState(false);
 
@@ -22,29 +22,21 @@ export default function PainelCorretor() {
   const [editEmail, setEditEmail] = useState("");
   const [editCreci, setEditCreci] = useState("");
 
-  // Buscar lista de corretores para encontrar o corretor logado
-  const { data: corretores, isLoading: corretoresLoading, refetch: refetchCorretores } = trpc.corretores.list.useQuery(
+  // Buscar apenas os dados do próprio corretor logado
+  const { data: meuCorretor, isLoading: corretoresLoading, refetch: refetchCorretores } = trpc.corretores.getMe.useQuery(
     undefined,
     { enabled: isAuthenticated }
   );
 
-  // Encontrar o corretor vinculado ao usuário logado (por email ou nome)
-  const meuCorretor = useMemo(() => {
-    if (!corretores || !user) return null;
-    return corretores.find(
-      (c: any) => c.email === user.email || c.nome === user.name
-    ) || null;
-  }, [corretores, user]);
-
-  // Buscar leads do corretor
-  const { data: meusLeads } = trpc.leads.byCorretor.useQuery(
-    { corretorId: meuCorretor?.id ?? 0 },
-    { enabled: !!meuCorretor?.id }
+  // Buscar leads do próprio corretor
+  const { data: meusLeads } = trpc.corretores.meusLeads.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
   );
 
-  // Buscar stats de acessos
+  // Stats de acessos: somente se admin/gerente (endpoint restrito)
   const { data: stats } = trpc.acessos.stats.useQuery(undefined, {
-    enabled: isAuthenticated,
+    enabled: canManage,
   });
 
   // Mutation para editar dados
@@ -66,10 +58,11 @@ export default function PainelCorretor() {
   }, [stats, meuCorretor]);
 
   const meusLeadsCount = useMemo(() => {
+    if (meusLeads) return meusLeads.length;
     if (!stats || !meuCorretor) return 0;
     const found = stats.leadsPorCorretor.find((l: any) => l.corretorId === meuCorretor.id);
     return found?.total ?? 0;
-  }, [stats, meuCorretor]);
+  }, [meusLeads, stats, meuCorretor]);
 
   // Loading
   if (authLoading || corretoresLoading) {
@@ -94,7 +87,7 @@ export default function PainelCorretor() {
 
   // Link personalizado
   const baseUrl = window.location.origin;
-  const meuLink = meuCorretor ? `${baseUrl}/?corretor=${meuCorretor.slug}` : "";
+  const meuLink = meuCorretor ? `${baseUrl}/${meuCorretor.slug}` : "";
 
   const copiarLink = () => {
     navigator.clipboard.writeText(meuLink);

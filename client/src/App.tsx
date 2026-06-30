@@ -10,15 +10,19 @@ import Login from "./pages/Login";
 import AdminCorretores from "./pages/AdminCorretores";
 import PainelCorretor from "./pages/PainelCorretor";
 import VisualizarProposta from "./pages/VisualizarProposta";
+import PaginaCorretor from "./pages/PaginaCorretor";
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      {/* Rotas fixas — sempre têm prioridade sobre /:slug */}
+      <Route path={"/"}>{() => <Home />}</Route>
       <Route path={"/login"} component={Login} />
       <Route path={"/admin/corretores"} component={AdminCorretores} />
       <Route path={"/corretor"} component={PainelCorretor} />
       <Route path="/proposta/:codigo" component={VisualizarProposta} />
       <Route path={"/404"} component={NotFound} />
+      {/* Link público do corretor: /:slug — captura apenas após todas as rotas fixas */}
+      <Route path="/:slug" component={PaginaCorretor} />
       <Route component={NotFound} />
     </Switch>
   );

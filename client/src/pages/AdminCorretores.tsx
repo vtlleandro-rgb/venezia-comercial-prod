@@ -36,7 +36,7 @@ const formatDate = (d: Date | string | null) => {
 };
 
 export default function AdminCorretores() {
-  const { isAuthenticated, loading, user } = useAuth({ redirectOnUnauthenticated: true });
+  const { isAuthenticated, canManage, loading, user } = useAuth({ redirectOnUnauthenticated: true });
   const [tab, setTab] = useState<"corretores" | "imobiliarias" | "leads" | "analytics">("corretores");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -61,11 +61,11 @@ export default function AdminCorretores() {
   });
   const [showImobForm, setShowImobForm] = useState(false);
 
-  // tRPC queries - only enabled when authenticated (admin)
-  const corretoresQuery = trpc.corretores.list.useQuery(undefined, { enabled: isAuthenticated, retry: false });
-  const imobiliariasQuery = trpc.imobiliarias.list.useQuery(undefined, { enabled: isAuthenticated, retry: false });
-  const leadsQuery = trpc.leads.list.useQuery(undefined, { enabled: isAuthenticated, retry: false });
-  const statsQuery = trpc.acessos.stats.useQuery(undefined, { enabled: isAuthenticated, retry: false });
+  // tRPC queries - apenas habilitadas para admin ou gerente
+  const corretoresQuery = trpc.corretores.list.useQuery(undefined, { enabled: canManage, retry: false });
+  const imobiliariasQuery = trpc.imobiliarias.list.useQuery(undefined, { enabled: canManage, retry: false });
+  const leadsQuery = trpc.leads.list.useQuery(undefined, { enabled: canManage, retry: false });
+  const statsQuery = trpc.acessos.stats.useQuery(undefined, { enabled: canManage, retry: false });
 
   // Mutations
   const createCorretor = trpc.corretores.create.useMutation({
@@ -220,6 +220,21 @@ export default function AdminCorretores() {
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-[#c62828] rounded-lg hover:bg-[#b71c1c] transition-colors"
           >
             Fazer Login
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canManage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4]">
+        <div className="text-center">
+          <Users size={48} className="mx-auto mb-4 text-gray-300" />
+          <p className="text-gray-600 font-medium mb-2">Acesso não autorizado</p>
+          <p className="text-gray-500 text-sm mb-4">Esta área é restrita a administradores e gerentes.</p>
+          <a href="/corretor" className="text-[#c62828] text-sm hover:underline">
+            Ir para o Painel do Corretor
           </a>
         </div>
       </div>

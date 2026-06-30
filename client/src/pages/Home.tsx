@@ -13,8 +13,16 @@ import PartnersSection from "@/components/sections/PartnersSection";
 import { useCorretor } from "@/hooks/useCorretor";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 
-export default function Home() {
-  const { corretor } = useCorretor();
+type CorretorData = NonNullable<ReturnType<typeof useCorretor>["corretor"]>;
+
+interface HomeProps {
+  corretorExterno?: CorretorData;
+}
+
+export default function Home({ corretorExterno }: HomeProps = {}) {
+  const { corretor: corretorQuery } = useCorretor();
+  // corretorExterno tem prioridade (vindo de /:slug); fallback para ?corretor=slug
+  const corretor = corretorExterno ?? corretorQuery;
 
   return (
     <div className="min-h-screen">

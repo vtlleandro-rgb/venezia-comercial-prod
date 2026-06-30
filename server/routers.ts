@@ -2,7 +2,7 @@ import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, manageProcedure, router } from "./_core/trpc";
 import {
   getCorretorBySlug,
   listCorretores,
@@ -38,13 +38,13 @@ const corretoresRouter = router({
       return getCorretorBySlug(input.slug);
     }),
 
-  // Protegido: listar todos os corretores
-  list: protectedProcedure.query(async () => {
+  // Admin ou Gerente: listar todos os corretores
+  list: manageProcedure.query(async () => {
     return listCorretores();
   }),
 
-  // Protegido: criar corretor
-  create: protectedProcedure
+  // Admin ou Gerente: criar corretor
+  create: manageProcedure
     .input(
       z.object({
         nome: z.string().min(1),
@@ -71,8 +71,8 @@ const corretoresRouter = router({
       });
     }),
 
-  // Protegido: atualizar corretor
-  update: protectedProcedure
+  // Admin ou Gerente: atualizar corretor
+  update: manageProcedure
     .input(
       z.object({
         id: z.number(),
@@ -93,13 +93,27 @@ const corretoresRouter = router({
       return { success: true };
     }),
 
-  // Protegido: desativar corretor
-  delete: protectedProcedure
+  // Admin ou Gerente: desativar corretor
+  delete: manageProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       await deleteCorretor(input.id);
       return { success: true };
     }),
+
+  // Protegido: corretor busca seus próprios dados pelo email do usuário logado
+  getMe: protectedProcedure.query(async ({ ctx }) => {
+    const allCorretores = await listCorretores();
+    return allCorretores.find((c) => c.email === ctx.user.email) ?? null;
+  }),
+
+  // Protegido: leads do próprio corretor (vinculado por email)
+  meusLeads: protectedProcedure.query(async ({ ctx }) => {
+    const allCorretores = await listCorretores();
+    const meu = allCorretores.find((c) => c.email === ctx.user.email);
+    if (!meu) return [];
+    return listLeadsByCorretor(meu.id);
+  }),
 
   // Protegido: corretor edita seus próprios dados (vinculado por email)
   updateMe: protectedProcedure
@@ -131,11 +145,11 @@ const corretoresRouter = router({
 // ─── Imobiliárias Router (admin) ────────────────────────────────────────────
 
 const imobiliariasRouter = router({
-  list: protectedProcedure.query(async () => {
+  list: manageProcedure.query(async () => {
     return listImobiliarias();
   }),
 
-  create: protectedProcedure
+  create: manageProcedure
     .input(
       z.object({
         nome: z.string().min(1),
@@ -154,7 +168,7 @@ const imobiliariasRouter = router({
       });
     }),
 
-  update: protectedProcedure
+  update: manageProcedure
     .input(
       z.object({
         id: z.number(),
@@ -208,13 +222,13 @@ const leadsRouter = router({
       });
     }),
 
-  // Protegido: listar todos os leads
-  list: protectedProcedure.query(async () => {
+  // Admin ou Gerente: listar todos os leads
+  list: manageProcedure.query(async () => {
     return listLeads();
   }),
 
-  // Protegido: listar leads por corretor
-  byCorretor: protectedProcedure
+  // Admin ou Gerente: listar leads por corretor
+  byCorretor: manageProcedure
     .input(z.object({ corretorId: z.number() }))
     .query(async ({ input }) => {
       return listLeadsByCorretor(input.corretorId);
@@ -242,8 +256,8 @@ const acessosRouter = router({
       return { success: true };
     }),
 
-  // Protegido: analytics de acessos
-  stats: protectedProcedure.query(async () => {
+  // Admin ou Gerente: analytics de acessos
+  stats: manageProcedure.query(async () => {
     const acessosPorCorretor = await countAcessosByCorretor();
     const leadsPorCorretor = await countLeadsByCorretor();
     return { acessosPorCorretor, leadsPorCorretor };
@@ -288,8 +302,8 @@ const unidadesRouter = router({
     return getUnidadesStatus();
   }),
 
-  // Protegido: somente usuário autenticado pode alterar status
-  updateStatus: protectedProcedure
+  // Admin ou Gerente: somente gestão pode alterar status de unidades
+  updateStatus: manageProcedure
     .input(z.object({
       unidadeId: z.string().min(1).max(20),
       status: z.enum(["disponivel", "reservado", "vendido"]),
@@ -304,8 +318,8 @@ const unidadesRouter = router({
 // ─── Vendas Router ──────────────────────────────────────────────────────────
 
 const vendasRouter = router({
-  // Protegido: registrar dados de fechamento de venda
-  registrar: protectedProcedure
+  // Admin ou Gerente: registrar dados de fechamento de venda
+  registrar: manageProcedure
     .input(z.object({
       unidadeId: z.string().min(1).max(20),
       comprador: z.string().min(1).max(255),
@@ -324,8 +338,8 @@ const vendasRouter = router({
       return registrarVenda(input);
     }),
 
-  // Protegido: listar vendas (admin)
-  list: protectedProcedure.query(async () => {
+  // Admin ou Gerente: listar vendas
+  list: manageProcedure.query(async () => {
     return listVendas();
   }),
 });
@@ -333,8 +347,8 @@ const vendasRouter = router({
 // ─── Cancelamentos Router ────────────────────────────────────────────────────
 
 const cancelamentosRouter = router({
-  // Protegido: registrar cancelamento de reserva
-  registrar: protectedProcedure
+  // Admin ou Gerente: registrar cancelamento de reserva
+  registrar: manageProcedure
     .input(z.object({
       unidadeId: z.string().min(1).max(20),
       unidadeNumero: z.string().optional(),
@@ -346,8 +360,8 @@ const cancelamentosRouter = router({
       return registrarCancelamento(input);
     }),
 
-  // Protegido: listar cancelamentos (admin)
-  list: protectedProcedure.query(async () => {
+  // Admin ou Gerente: listar cancelamentos
+  list: manageProcedure.query(async () => {
     return listCancelamentos();
   }),
 });

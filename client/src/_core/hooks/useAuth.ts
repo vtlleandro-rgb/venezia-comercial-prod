@@ -102,8 +102,13 @@ export function useAuth(options?: UseAuthOptions) {
     state.user,
   ]);
 
+  const canManage = state.user?.role === "admin" || state.user?.role === "gerente";
+  const isAdmin = state.user?.role === "admin";
+
   return {
     ...state,
+    canManage,
+    isAdmin,
     refresh: () => meQuery.refetch(),
     logout,
   };
