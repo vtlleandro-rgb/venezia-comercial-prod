@@ -73,6 +73,12 @@ export default function PainelCorretor() {
     );
   }
 
+  // Admin e gerente não pertencem ao PainelCorretor — redireciona
+  if (!authLoading && canManage) {
+    window.location.href = "/admin/corretores";
+    return null;
+  }
+
   // Não autenticado — useAuth já trata o redirect, mas PainelCorretor
   // tem guard próprio. Só redireciona se bypass não estiver ativo.
   if (!isAuthenticated) {

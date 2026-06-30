@@ -32,7 +32,7 @@ export default function Login() {
       }
       // Invalidar cache do auth.me antes de redirecionar
       await utils.auth.me.invalidate();
-      const dest = data.role === "admin" ? "/admin/corretores" : "/corretor";
+      const dest = (data.role === "admin" || data.role === "gerente") ? "/admin/corretores" : "/corretor";
       window.location.href = dest;
     } catch {
       setError("Erro de conexão. Tente novamente.");
