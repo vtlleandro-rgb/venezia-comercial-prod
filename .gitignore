@@ -117,3 +117,4 @@ client/public/__manus__/version.json
 # pnpm local state (gerado automaticamente, não é código-fonte)
 .local/
 Library/
+.env.save
