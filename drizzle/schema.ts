@@ -108,3 +108,59 @@ export const propostas = mysqlTable("propostas", {
 
 export type Proposta = typeof propostas.$inferSelect;
 export type InsertProposta = typeof propostas.$inferInsert;
+
+/**
+ * Status oficial das unidades — fonte de verdade compartilhada entre usuários.
+ * Substitui venezia_unidades_status do localStorage.
+ */
+export const unidadesStatus = mysqlTable("unidades_status", {
+  id: int("id").autoincrement().primaryKey(),
+  unidadeId: varchar("unidade_id", { length: 20 }).notNull().unique(),
+  status: mysqlEnum("status", ["disponivel", "reservado", "vendido"]).notNull().default("disponivel"),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedBy: varchar("updated_by", { length: 255 }),
+});
+
+export type UnidadeStatusRow = typeof unidadesStatus.$inferSelect;
+export type InsertUnidadeStatus = typeof unidadesStatus.$inferInsert;
+
+/**
+ * Dados de fechamento de venda por unidade.
+ * Substitui venezia_dados_venda do localStorage.
+ */
+export const vendas = mysqlTable("vendas", {
+  id: int("id").autoincrement().primaryKey(),
+  unidadeId: varchar("unidade_id", { length: 20 }).notNull(),
+  comprador: varchar("comprador", { length: 255 }).notNull(),
+  cpf: varchar("cpf", { length: 20 }),
+  telefone: varchar("telefone", { length: 20 }),
+  imobiliaria: varchar("imobiliaria", { length: 255 }),
+  corretor: varchar("corretor", { length: 255 }),
+  dataAssinatura: varchar("data_assinatura", { length: 20 }),
+  valorSemDocumentacao: int("valor_sem_documentacao"),
+  valorFinanciamento: int("valor_financiamento"),
+  fgts: int("fgts"),
+  entrada: int("entrada"),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Venda = typeof vendas.$inferSelect;
+export type InsertVenda = typeof vendas.$inferInsert;
+
+/**
+ * Histórico de cancelamentos de reserva.
+ * Substitui venezia_cancelamentos do localStorage.
+ */
+export const cancelamentos = mysqlTable("cancelamentos", {
+  id: int("id").autoincrement().primaryKey(),
+  unidadeId: varchar("unidade_id", { length: 20 }).notNull(),
+  unidadeNumero: varchar("unidade_numero", { length: 10 }),
+  motivo: varchar("motivo", { length: 255 }).notNull(),
+  observacoes: text("observacoes"),
+  usuario: varchar("usuario", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Cancelamento = typeof cancelamentos.$inferSelect;
+export type InsertCancelamento = typeof cancelamentos.$inferInsert;

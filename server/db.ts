@@ -8,11 +8,16 @@ import {
   leads,
   acessos,
   propostas,
+  unidadesStatus,
+  vendas,
+  cancelamentos,
   InsertCorretor,
   InsertImobiliaria,
   InsertLead,
   InsertAcesso,
   InsertProposta,
+  InsertVenda,
+  InsertCancelamento,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -259,4 +264,56 @@ export async function getPropostaByCodigo(codigo: string) {
   if (!db) return null;
   const result = await db.select().from(propostas).where(eq(propostas.codigo, codigo)).limit(1);
   return result[0] || null;
+}
+
+// ─── Unidades Status ─────────────────────────────────────────────────────────
+
+export async function getUnidadesStatus(): Promise<Record<string, "disponivel" | "reservado" | "vendido">> {
+  const db = await getDb();
+  if (!db) return {};
+  const rows = await db.select().from(unidadesStatus);
+  return Object.fromEntries(rows.map((r) => [r.unidadeId, r.status]));
+}
+
+export async function updateUnidadeStatus(
+  unidadeId: string,
+  status: "disponivel" | "reservado" | "vendido",
+  updatedBy: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .insert(unidadesStatus)
+    .values({ unidadeId, status, updatedBy })
+    .onDuplicateKeyUpdate({ set: { status, updatedBy } });
+}
+
+// ─── Vendas ──────────────────────────────────────────────────────────────────
+
+export async function registrarVenda(data: Omit<InsertVenda, "id" | "createdAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(vendas).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function listVendas() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(vendas).orderBy(desc(vendas.createdAt));
+}
+
+// ─── Cancelamentos ───────────────────────────────────────────────────────────
+
+export async function registrarCancelamento(data: Omit<InsertCancelamento, "id" | "createdAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(cancelamentos).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function listCancelamentos() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(cancelamentos).orderBy(desc(cancelamentos.createdAt));
 }

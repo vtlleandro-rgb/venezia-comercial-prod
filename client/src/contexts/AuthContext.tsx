@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { trpc } from "@/lib/trpc";
 
 // Senha padrão de acesso restrito
 const SENHA_PADRAO = "venezia2025";
@@ -91,6 +92,9 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const registrarVendaMutation = trpc.vendas.registrar.useMutation();
+  const registrarCancelamentoMutation = trpc.cancelamentos.registrar.useMutation();
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return sessionStorage.getItem("venezia_auth") === "true";
   });
@@ -156,12 +160,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const salvarDadosVenda = useCallback((unidadeId: string, dados: DadosVenda) => {
+    // Atualização local (estado otimista para exibição imediata)
     setDadosVenda((prev) => {
       const updated = { ...prev, [unidadeId]: dados };
       localStorage.setItem("venezia_dados_venda", JSON.stringify(updated));
       return updated;
     });
-  }, []);
+    // Persistência oficial no banco Railway
+    registrarVendaMutation.mutate({
+      unidadeId,
+      comprador: dados.comprador,
+      cpf: dados.cpf,
+      telefone: dados.telefone,
+      imobiliaria: dados.imobiliaria,
+      corretor: dados.corretor,
+      dataAssinatura: dados.dataAssinatura,
+      valorSemDocumentacao: dados.valorSemDocumentacao,
+      valorFinanciamento: dados.valorFinanciamento,
+      fgts: dados.fgts,
+      entrada: dados.entrada,
+      observacoes: dados.observacoes,
+    });
+  }, [registrarVendaMutation]);
 
   const addCancelamento = useCallback((cancelamento: Omit<CancelamentoReserva, "id" | "data">) => {
     const newCancelamento: CancelamentoReserva = {
@@ -169,12 +189,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(),
       data: new Date().toISOString(),
     };
+    // Atualização local (estado otimista)
     setCancelamentos((prev) => {
       const updated = [newCancelamento, ...prev].slice(0, 200);
       localStorage.setItem("venezia_cancelamentos", JSON.stringify(updated));
       return updated;
     });
-  }, []);
+    // Persistência oficial no banco Railway
+    registrarCancelamentoMutation.mutate({
+      unidadeId: cancelamento.unidadeId,
+      unidadeNumero: cancelamento.unidadeNumero,
+      motivo: cancelamento.motivo,
+      observacoes: cancelamento.observacoes,
+      usuario: cancelamento.usuario,
+    });
+  }, [registrarCancelamentoMutation]);
 
   const addProposta = useCallback((proposta: Omit<PropostaRegistro, "id" | "dataGeracao">) => {
     const newProposta: PropostaRegistro = {

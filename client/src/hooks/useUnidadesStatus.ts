@@ -1,52 +1,43 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { UNIDADES, type UnidadeStatus } from "@/data/empreendimento";
+import { trpc } from "@/lib/trpc";
 
-const STORAGE_KEY = "venezia_unidades_status";
-const EVENT_NAME = "venezia-status-update";
+const DEFAULT_STATUS: Record<string, UnidadeStatus> = Object.fromEntries(
+  UNIDADES.map((u) => [u.id, u.status])
+);
 
 /**
- * Hook centralizado para gerenciar e sincronizar o status das unidades
- * entre todos os módulos (Tabela, Dashboard, Navegação).
- * 
- * Escuta tanto o evento customizado quanto o evento de storage (multi-tab).
+ * Hook centralizado para status das unidades.
+ * Fonte oficial: banco Railway (unidades_status).
+ * Fallback: status padrão do empreendimento.ts enquanto o banco carrega.
+ * localStorage não é mais fonte oficial — apenas o banco importa.
  */
 export function useUnidadesStatus() {
-  const [unidadesStatus, setUnidadesStatus] = useState<Record<string, UnidadeStatus>>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
-    return Object.fromEntries(UNIDADES.map((u) => [u.id, u.status]));
+  const utils = trpc.useUtils();
+
+  const { data: dbStatus } = trpc.unidades.getStatus.useQuery(undefined, {
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
   });
 
-  // Sincronizar quando outro componente ou aba atualizar
-  useEffect(() => {
-    const handleUpdate = () => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setUnidadesStatus(JSON.parse(saved));
-      }
-    };
+  const updateMutation = trpc.unidades.updateStatus.useMutation({
+    onSuccess: () => {
+      utils.unidades.getStatus.invalidate();
+    },
+  });
 
-    // Evento customizado (mesma aba, entre componentes)
-    window.addEventListener(EVENT_NAME, handleUpdate);
-    // Evento storage (multi-tab)
-    window.addEventListener("storage", (e) => {
-      if (e.key === STORAGE_KEY) handleUpdate();
-    });
+  // Mescla: banco tem prioridade; fallback para padrão enquanto carrega
+  const unidadesStatus: Record<string, UnidadeStatus> = {
+    ...DEFAULT_STATUS,
+    ...(dbStatus ?? {}),
+  };
 
-    return () => {
-      window.removeEventListener(EVENT_NAME, handleUpdate);
-      window.removeEventListener("storage", handleUpdate as any);
-    };
-  }, []);
-
-  const updateStatus = useCallback((id: string, novoStatus: UnidadeStatus) => {
-    setUnidadesStatus((prev) => {
-      const updated = { ...prev, [id]: novoStatus };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      window.dispatchEvent(new Event(EVENT_NAME));
-      return updated;
-    });
-  }, []);
+  const updateStatus = useCallback(
+    (id: string, novoStatus: UnidadeStatus) => {
+      updateMutation.mutate({ unidadeId: id, status: novoStatus });
+    },
+    [updateMutation]
+  );
 
   return { unidadesStatus, updateStatus };
 }

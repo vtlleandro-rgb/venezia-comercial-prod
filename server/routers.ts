@@ -20,6 +20,12 @@ import {
   countLeadsByCorretor,
   salvarProposta,
   getPropostaByCodigo,
+  getUnidadesStatus,
+  updateUnidadeStatus,
+  registrarVenda,
+  listVendas,
+  registrarCancelamento,
+  listCancelamentos,
 } from "./db";
 
 // ─── Corretores Router (público + admin) ────────────────────────────────────
@@ -274,6 +280,78 @@ const propostasRouter = router({
     }),
 });
 
+// ─── Unidades Router ────────────────────────────────────────────────────────
+
+const unidadesRouter = router({
+  // Público: status das unidades é visível a todos (tabela comercial pública)
+  getStatus: publicProcedure.query(async () => {
+    return getUnidadesStatus();
+  }),
+
+  // Protegido: somente usuário autenticado pode alterar status
+  updateStatus: protectedProcedure
+    .input(z.object({
+      unidadeId: z.string().min(1).max(20),
+      status: z.enum(["disponivel", "reservado", "vendido"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const updatedBy = ctx.user.name ?? ctx.user.email ?? "admin";
+      await updateUnidadeStatus(input.unidadeId, input.status, updatedBy);
+      return { success: true };
+    }),
+});
+
+// ─── Vendas Router ──────────────────────────────────────────────────────────
+
+const vendasRouter = router({
+  // Protegido: registrar dados de fechamento de venda
+  registrar: protectedProcedure
+    .input(z.object({
+      unidadeId: z.string().min(1).max(20),
+      comprador: z.string().min(1).max(255),
+      cpf: z.string().optional(),
+      telefone: z.string().optional(),
+      imobiliaria: z.string().optional(),
+      corretor: z.string().optional(),
+      dataAssinatura: z.string().optional(),
+      valorSemDocumentacao: z.number().optional(),
+      valorFinanciamento: z.number().optional(),
+      fgts: z.number().optional(),
+      entrada: z.number().optional(),
+      observacoes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      return registrarVenda(input);
+    }),
+
+  // Protegido: listar vendas (admin)
+  list: protectedProcedure.query(async () => {
+    return listVendas();
+  }),
+});
+
+// ─── Cancelamentos Router ────────────────────────────────────────────────────
+
+const cancelamentosRouter = router({
+  // Protegido: registrar cancelamento de reserva
+  registrar: protectedProcedure
+    .input(z.object({
+      unidadeId: z.string().min(1).max(20),
+      unidadeNumero: z.string().optional(),
+      motivo: z.string().min(1).max(255),
+      observacoes: z.string().optional(),
+      usuario: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      return registrarCancelamento(input);
+    }),
+
+  // Protegido: listar cancelamentos (admin)
+  list: protectedProcedure.query(async () => {
+    return listCancelamentos();
+  }),
+});
+
 // ─── App Router ─────────────────────────────────────────────────────────────
 
 export const appRouter = router({
@@ -292,6 +370,9 @@ export const appRouter = router({
   leads: leadsRouter,
   acessos: acessosRouter,
   propostas: propostasRouter,
+  unidades: unidadesRouter,
+  vendas: vendasRouter,
+  cancelamentos: cancelamentosRouter,
 });
 
 export type AppRouter = typeof appRouter;
