@@ -3,8 +3,9 @@ import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { UNIDADES, EMPREENDIMENTO, type Unidade, type UnidadeStatus } from "@/data/empreendimento";
 import { BarChart3, TrendingUp, Target, DollarSign, Check, Lock, ShieldCheck, PieChart, Printer } from "lucide-react";
-import { useAuth, type DadosVenda } from "@/contexts/AuthContext";
-import PasswordModal from "@/components/PasswordModal";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import type { DadosVenda } from "@/contexts/AuthContext";
 import VendaModal from "@/components/VendaModal";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, ResponsiveContainer } from "recharts";
@@ -31,7 +32,9 @@ function RelatorioConsolidado({
   reservados: number;
   disponiveis: number;
 }) {
-  const { log, dadosVenda } = useAuth();
+  // Log e dadosVenda eram localStorage — removidos; dados no banco via tRPC
+  const log: import("@/contexts/AuthContext").LogEntry[] = [];
+  const dadosVenda: Record<string, import("@/contexts/AuthContext").DadosVenda> = {};
 
   // Dados por andar
   const dadosPorAndar = useMemo(() => {
@@ -282,15 +285,12 @@ function RelatorioConsolidado({
 
 export default function DashboardSection() {
   const { ref, isVisible } = useScrollAnimation();
-  const { isAuthenticated, addLog, salvarDadosVenda } = useAuth();
+  const { canManage } = useAuth();
+  const registrarVendaMutation = trpc.vendas.registrar.useMutation();
   const [editando, setEditando] = useState<string | null>(null);
 
   // Estado sincronizado entre módulos
   const { unidadesStatus, updateStatus } = useUnidadesStatus();
-
-  // Modal de senha
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ id: string; status: UnidadeStatus } | null>(null);
 
   // Modal de venda
   const [showVendaModal, setShowVendaModal] = useState(false);
@@ -401,14 +401,6 @@ ${[4, 3, 2, 1].map((andar) => {
 
     const unidade = UNIDADES.find((u) => u.id === id);
     const statusLabel = novoStatus === "disponivel" ? "Disponível" : novoStatus === "reservado" ? "Reservado" : "Vendido";
-    
-    addLog({
-      unidade: unidade?.numero || id,
-      statusAnterior: unidadesStatus[id],
-      statusNovo: novoStatus,
-      usuario: "Administrador",
-    });
-
     updateStatus(id, novoStatus);
     setEditando(null);
     toast.success(`Unidade ${unidade?.numero} alterada para ${statusLabel}`);
@@ -416,19 +408,22 @@ ${[4, 3, 2, 1].map((andar) => {
 
   const handleVendaConfirm = (dados: DadosVenda) => {
     if (vendaPendingId) {
-      salvarDadosVenda(vendaPendingId, dados);
-      
       const unidade = UNIDADES.find((u) => u.id === vendaPendingId);
-      addLog({
-        unidade: unidade?.numero || vendaPendingId,
-        statusAnterior: unidadesStatus[vendaPendingId],
-        statusNovo: "vendido",
-        usuario: "Administrador",
-        detalhes: `Comprador: ${dados.comprador} | Corretor: ${dados.corretor} | Imob: ${dados.imobiliaria} | Data: ${dados.dataAssinatura}`,
+      registrarVendaMutation.mutate({
+        unidadeId: vendaPendingId,
+        comprador: dados.comprador,
+        cpf: dados.cpf,
+        telefone: dados.telefone,
+        imobiliaria: dados.imobiliaria,
+        corretor: dados.corretor,
+        dataAssinatura: dados.dataAssinatura,
+        valorSemDocumentacao: dados.valorSemDocumentacao,
+        valorFinanciamento: dados.valorFinanciamento,
+        fgts: dados.fgts,
+        entrada: dados.entrada,
+        observacoes: dados.observacoes,
       });
-
-      updateStatus(vendaPendingId!, "vendido");
-
+      updateStatus(vendaPendingId, "vendido");
       toast.success(`Unidade ${unidade?.numero} — Venda registrada com sucesso!`);
       setVendaPendingId(null);
       setVendaUnidade(null);
@@ -436,28 +431,14 @@ ${[4, 3, 2, 1].map((andar) => {
   };
 
   const alterarStatus = (id: string, novoStatus: UnidadeStatus) => {
-    if (isAuthenticated) {
+    if (canManage) {
       executeStatusChange(id, novoStatus);
-    } else {
-      setPendingAction({ id, status: novoStatus });
-      setShowPasswordModal(true);
-    }
-  };
-
-  const handlePasswordSuccess = () => {
-    toast.success("Acesso desbloqueado para esta sessão");
-    if (pendingAction) {
-      executeStatusChange(pendingAction.id, pendingAction.status);
-      setPendingAction(null);
     }
   };
 
   const handleUnitClick = (id: string) => {
-    if (isAuthenticated) {
+    if (canManage) {
       setEditando(editando === id ? null : id);
-    } else {
-      setPendingAction(null);
-      setShowPasswordModal(true);
     }
   };
 
@@ -477,27 +458,26 @@ ${[4, 3, 2, 1].map((andar) => {
           <div className="italian-divider mx-auto mb-6" />
         </div>
 
-        {/* Tela de bloqueio - exige autenticação */}
-        {!isAuthenticated && (
+        {/* Tela de bloqueio — visível apenas para visitantes e corretores sem permissão */}
+        {!canManage && (
           <div className="text-center py-16">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/5 border border-white/10 mb-6">
               <Lock size={32} className="text-white/40" />
             </div>
-            <h3 className="font-serif text-2xl text-white mb-3">Área Restrita
-            </h3>
+            <h3 className="font-serif text-2xl text-white mb-3">Área Restrita</h3>
             <p className="text-white/50 text-sm mb-6 max-w-md mx-auto">
-              O Dashboard Executivo é uma área protegida. Digite a senha de acesso para visualizar os indicadores, espelho de vendas e relatórios.
+              O Dashboard Executivo é uma área restrita. Faça login como administrador ou gerente para acessar os indicadores e espelho de vendas.
             </p>
-            <button
-              onClick={() => setShowPasswordModal(true)}
-              className="px-6 py-3 bg-[#c62828] text-white text-sm font-medium rounded-lg hover:bg-[#b71c1c] transition-colors shadow-lg"
+            <a
+              href="/login"
+              className="inline-block px-6 py-3 bg-[#c62828] text-white text-sm font-medium rounded-lg hover:bg-[#b71c1c] transition-colors shadow-lg"
             >
-              Desbloquear Acesso
-            </button>
+              Fazer Login
+            </a>
           </div>
         )}
 
-        {isAuthenticated && (
+        {canManage && (
           <>
 
         {/* KPI Cards */}
@@ -529,7 +509,7 @@ ${[4, 3, 2, 1].map((andar) => {
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-serif text-xl">Espelho de Vendas</h3>
             <p className="text-white/40 text-xs flex items-center gap-1.5">
-              {isAuthenticated ? (
+              {canManage ? (
                 <>
                   <ShieldCheck size={12} className="text-emerald-400" />
                   <span className="text-emerald-400/70">Acesso liberado — clique para alterar</span>
@@ -570,12 +550,12 @@ ${[4, 3, 2, 1].map((andar) => {
                           <p className="text-[9px] opacity-50">c/ Doc: {formatCurrency(u.valorComDocumentacao)}</p>
                           <p className="text-[9px] uppercase mt-1 opacity-60 flex items-center justify-center gap-1">
                             {u.status === "disponivel" ? "Disponível" : u.status === "reservado" ? "Reservado" : "Vendido"}
-                            {!isAuthenticated && <Lock size={8} className="opacity-50" />}
+                            {!canManage && <Lock size={8} className="opacity-50" />}
                           </p>
                         </div>
 
                         {/* Menu de status - só aparece se autenticado */}
-                        {editando === u.id && isAuthenticated && (
+                        {editando === u.id && canManage && (
                           <div className="absolute top-full left-0 right-0 mt-1 z-20 bg-[#2a2a4e] border border-white/20 rounded-lg shadow-xl overflow-hidden">
                             <button
                               onClick={() => alterarStatus(u.id, "disponivel")}
@@ -668,13 +648,6 @@ ${[4, 3, 2, 1].map((andar) => {
           </>
         )}
       </div>
-
-      {/* Password Modal */}
-      <PasswordModal
-        open={showPasswordModal}
-        onOpenChange={setShowPasswordModal}
-        onSuccess={handlePasswordSuccess}
-      />
 
       {/* Venda Modal */}
       <VendaModal

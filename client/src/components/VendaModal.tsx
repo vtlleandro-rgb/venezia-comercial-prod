@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { useAuth, type DadosVenda } from "@/contexts/AuthContext";
+import type { DadosVenda } from "@/contexts/AuthContext";
 import { FileText, User, Download, Mail, History, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Unidade } from "@/data/empreendimento";
@@ -55,7 +55,7 @@ function calcularParcela(valorFinanc: number, taxaAnual: number, prazoMeses: num
 }
 
 export default function VendaModal({ open, onOpenChange, unidade, onConfirm }: VendaModalProps) {
-  const { dadosVenda, propostas, addProposta } = useAuth();
+  const dadosVenda: Record<string, DadosVenda> = {};
 
   const [comprador, setComprador] = useState("");
   const [cpf, setCpf] = useState("");
@@ -162,23 +162,6 @@ export default function VendaModal({ open, onOpenChange, unidade, onConfirm }: V
       ? new Date(dataAssinatura + "T12:00:00").toLocaleDateString("pt-BR")
       : new Date().toLocaleDateString("pt-BR");
 
-    // Registrar proposta no histórico
-    addProposta({
-      unidadeId: unidade.id,
-      unidadeNumero: unidade.numero,
-      comprador: comprador.trim(),
-      cpf: cpf || undefined,
-      telefone: telefone || undefined,
-      imobiliaria: imobiliaria.trim(),
-      corretor: corretor.trim(),
-      valorBase,
-      tipoValor: tipoValor === "com_doc" ? "Com Documentação" : "Sem Documentação",
-      entrada: valorEntrada,
-      financiamento: valorFinanciamento,
-      fgts: fgtsValue,
-      observacoes: observacoes.trim() || undefined,
-    });
-
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Proposta Comercial - Unidade ${unidade.numero}</title>
 <style>
 @page{margin:2cm;size:A4}*{margin:0;padding:0;box-sizing:border-box}
@@ -276,7 +259,7 @@ ${aceiteDigital ? `<div class="aceite"><h4>Aceite Digital do Comprador</h4><p>De
     } else {
       toast.error("Bloqueador de pop-ups ativo. Permita pop-ups para gerar o PDF.");
     }
-  }, [unidade, comprador, cpf, telefone, imobiliaria, corretor, dataAssinatura, tipoValor, valorBase, valorEntrada, fgtsValue, valorFinanciamento, percentEntrada, percentFinanc, observacoes, aceiteDigital, parcelas, addProposta, condicaoEntrada, numParcelas, valorParcelaEntrada]);
+  }, [unidade, comprador, cpf, telefone, imobiliaria, corretor, dataAssinatura, tipoValor, valorBase, valorEntrada, fgtsValue, valorFinanciamento, percentEntrada, percentFinanc, observacoes, aceiteDigital, parcelas, condicaoEntrada, numParcelas, valorParcelaEntrada]);
 
   // Gerar HTML da proposta para link compartilhável
   const gerarHtmlPropostaLink = useCallback(() => {
@@ -461,11 +444,8 @@ Loteamento Terra Firme, Bairro Areias, Tijucas/SC
     onOpenChange(isOpen);
   };
 
-  // Histórico de propostas desta unidade
-  const historicoUnidade = useMemo(() => {
-    if (!unidade) return [];
-    return propostas.filter((p) => p.unidadeId === unidade.id);
-  }, [propostas, unidade]);
+  // Histórico de propostas: vazio (localStorage removido — dados ficam no banco)
+  const historicoUnidade: import("@/contexts/AuthContext").PropostaRegistro[] = [];
 
   if (!unidade) return null;
 

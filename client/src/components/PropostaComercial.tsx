@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { X, FileText, Printer, Share2, Mail, MessageCircle, Building2, User, CreditCard, Home, Eye, Calculator, Landmark, Download, Loader2, CheckCircle2, DollarSign } from "lucide-react";
 import { UNIDADES, EMPREENDIMENTO, TIPOLOGIAS, IMAGENS, CONDICOES_COMERCIAIS, type Unidade } from "@/data/empreendimento";
-import { useAuth } from "@/contexts/AuthContext";
+// AuthContext legado removido — propostas vão para banco via propostas.salvar tRPC
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -35,7 +35,6 @@ interface PropostaComercialProps {
 }
 
 export default function PropostaComercial({ open, onClose, valorSimulado, percentualEntradaSimulado, reforcosSimulado, corretorData }: PropostaComercialProps) {
-  const { addProposta } = useAuth();
   const registrarLead = trpc.leads.registrar.useMutation();
   const salvarPropostaMutation = trpc.propostas.salvar.useMutation();
   const [linkProposta, setLinkProposta] = useState<string | null>(null);
@@ -478,25 +477,6 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
       }
     }
 
-    // Registrar proposta no histórico local
-    if (addProposta) {
-      addProposta({
-        unidadeId: unidade?.id || "",
-        unidadeNumero: unidade ? unidade.numero : "Simulação",
-        comprador: comprador || "Não informado",
-        cpf: cpf || undefined,
-        telefone: telefoneCliente || undefined,
-        imobiliaria: imobiliaria || "",
-        corretor: corretorNome || "",
-        valorBase: simulacao.valorImovel,
-        tipoValor: "Tabela",
-        entrada: simulacao.entradaTotal,
-        financiamento: simulacao.valorFinanciado,
-        fgts: 0,
-        observacoes: observacoes || undefined,
-      });
-    }
-
     // Registrar lead no backend
     if (corretorData?.id) {
       registrarLead.mutate({
@@ -515,7 +495,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
     }
 
     toast.success("Proposta gerada com sucesso!");
-  }, [gerarHtmlProposta, addProposta, unidade, simulacao, comprador, telefoneCliente, corretorData, registrarLead]);
+  }, [gerarHtmlProposta, unidade, simulacao, comprador, telefoneCliente, corretorData, registrarLead]);
 
   // Salvar proposta online e gerar link
   const handleSalvarECompartilhar = useCallback(async (canal: "whatsapp" | "email") => {

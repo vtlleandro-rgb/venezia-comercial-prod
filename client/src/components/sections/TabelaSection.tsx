@@ -3,10 +3,10 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
 import { UNIDADES, EMPREENDIMENTO, CONDICOES_COMERCIAIS, type UnidadeStatus, type Unidade } from "@/data/empreendimento";
 import { ArrowUpDown, Filter, CheckCircle2, Clock, XCircle, Lock, ShieldCheck, Settings, AlertTriangle } from "lucide-react";
-import { useAuth, type DadosVenda } from "@/contexts/AuthContext";
-import PasswordModal from "@/components/PasswordModal";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import type { DadosVenda } from "@/contexts/AuthContext";
 import VendaModal from "@/components/VendaModal";
-import AdminPanel from "@/components/AdminPanel";
 import CancelamentoModal from "@/components/CancelamentoModal";
 import { toast } from "sonner";
 
@@ -51,23 +51,19 @@ type SortKey = "numero" | "andar" | "area" | "valorVenda" | "precoM2";
 
 export default function TabelaSection() {
   const { ref, isVisible } = useScrollAnimation();
-  const { isAuthenticated, logout, addLog, salvarDadosVenda, addCancelamento, dadosVenda } = useAuth();
+  const { canManage } = useAuth();
+  const registrarVendaMutation = trpc.vendas.registrar.useMutation();
+  const registrarCancelamentoMutation = trpc.cancelamentos.registrar.useMutation();
+
   const [sortKey, setSortKey] = useState<SortKey>("andar");
   const [sortAsc, setSortAsc] = useState(true);
   const [filterAndar, setFilterAndar] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<UnidadeStatus | null>(null);
 
-  // Modal de senha
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-
   // Modal de venda
   const [showVendaModal, setShowVendaModal] = useState(false);
   const [vendaUnidade, setVendaUnidade] = useState<Unidade | null>(null);
   const [vendaPendingId, setVendaPendingId] = useState<string | null>(null);
-
-  // Admin panel
-  const [showAdmin, setShowAdmin] = useState(false);
 
   // Modal de cancelamento de reserva
   const [showCancelamentoModal, setShowCancelamentoModal] = useState(false);
@@ -104,28 +100,15 @@ export default function TabelaSection() {
   const executeStatusChange = useCallback((id: string, forceStatus?: UnidadeStatus) => {
     const newStatus = forceStatus || nextStatus[unidadesStatus[id]];
     const unidade = UNIDADES.find((u) => u.id === id);
-    
-    // Registrar no log
-    addLog({
-      unidade: unidade?.numero || id,
-      statusAnterior: unidadesStatus[id],
-      statusNovo: newStatus,
-      usuario: "Administrador",
-    });
-
     updateStatus(id, newStatus);
     toast.success(`Unidade ${unidade?.numero} alterada para ${statusLabels[newStatus]}`);
-  }, [addLog, unidadesStatus, updateStatus]);
+  }, [unidadesStatus, updateStatus]);
 
   // Estado para menu de contexto ao clicar em reservado
   const [showStatusMenu, setShowStatusMenu] = useState<string | null>(null);
 
   const handleStatusChange = (id: string) => {
-    if (!isAuthenticated) {
-      setPendingAction(id);
-      setShowPasswordModal(true);
-      return;
-    }
+    if (!canManage) return;
 
     const currentStatus = unidadesStatus[id];
 
@@ -161,30 +144,15 @@ export default function TabelaSection() {
     if (!cancelamentoUnidade) return;
     const id = cancelamentoUnidade.id;
 
-    // Registrar cancelamento no histórico
-    addCancelamento({
+    registrarCancelamentoMutation.mutate({
       unidadeId: id,
       unidadeNumero: cancelamentoUnidade.numero,
       motivo,
       observacoes: observacoes || undefined,
-      usuario: "Administrador",
-      dadosReservaAnterior: dadosVenda[id] || undefined,
+      usuario: "Gestão",
     });
 
-    // Registrar no log
-    addLog({
-      unidade: cancelamentoUnidade.numero,
-      statusAnterior: "reservado",
-      statusNovo: "disponivel",
-      usuario: "Administrador",
-      tipo: "cancelamento",
-      motivo,
-      detalhes: `Motivo: ${motivo}${observacoes ? ` | Obs: ${observacoes}` : ""}`,
-    });
-
-    // Alterar status para disponível
     updateStatus(id, "disponivel");
-
     toast.success(`Reserva da unidade ${cancelamentoUnidade.numero} cancelada com sucesso`);
     setShowCancelamentoModal(false);
     setCancelamentoUnidade(null);
@@ -200,42 +168,25 @@ export default function TabelaSection() {
 
   const handleVendaConfirm = (dados: DadosVenda) => {
     if (vendaPendingId) {
-      salvarDadosVenda(vendaPendingId, dados);
-      
-      // Registrar no log com detalhes
       const unidade = UNIDADES.find((u) => u.id === vendaPendingId);
-      addLog({
-        unidade: unidade?.numero || vendaPendingId,
-        statusAnterior: unidadesStatus[vendaPendingId],
-        statusNovo: "vendido",
-        usuario: "Administrador",
-        detalhes: `Comprador: ${dados.comprador} | Corretor: ${dados.corretor} | Imob: ${dados.imobiliaria} | Data: ${dados.dataAssinatura}`,
+      registrarVendaMutation.mutate({
+        unidadeId: vendaPendingId,
+        comprador: dados.comprador,
+        cpf: dados.cpf,
+        telefone: dados.telefone,
+        imobiliaria: dados.imobiliaria,
+        corretor: dados.corretor,
+        dataAssinatura: dados.dataAssinatura,
+        valorSemDocumentacao: dados.valorSemDocumentacao,
+        valorFinanciamento: dados.valorFinanciamento,
+        fgts: dados.fgts,
+        entrada: dados.entrada,
+        observacoes: dados.observacoes,
       });
-
-      updateStatus(vendaPendingId!, "vendido");
-
+      updateStatus(vendaPendingId, "vendido");
       toast.success(`Unidade ${unidade?.numero} — Venda registrada com sucesso!`);
       setVendaPendingId(null);
       setVendaUnidade(null);
-    }
-  };
-
-  const handlePasswordSuccess = () => {
-    toast.success("Acesso desbloqueado para esta sessão");
-    if (pendingAction) {
-      // Após autenticação, executar a ação pendente
-      const currentStatus = unidadesStatus[pendingAction];
-      const newStatus = nextStatus[currentStatus];
-      
-      if (newStatus === "vendido") {
-        const unidade = unidadesComStatus.find((u) => u.id === pendingAction);
-        setVendaUnidade(unidade || null);
-        setVendaPendingId(pendingAction);
-        setShowVendaModal(true);
-      } else {
-        executeStatusChange(pendingAction);
-      }
-      setPendingAction(null);
     }
   };
 
@@ -265,7 +216,7 @@ export default function TabelaSection() {
           </h2>
           <div className="italian-divider mx-auto mb-6" />
           <p className="text-gray-500 text-sm">
-            {isAuthenticated ? (
+            {canManage ? (
               <span className="inline-flex items-center gap-1.5 text-emerald-600">
                 <ShieldCheck size={14} />
                 Acesso desbloqueado — clique no status para alterar
@@ -279,23 +230,16 @@ export default function TabelaSection() {
           </p>
         </div>
 
-        {/* Auth indicator + Admin */}
-        {isAuthenticated && (
-          <div className="flex justify-end mb-4 gap-3">
-            <button
-              onClick={() => setShowAdmin(true)}
+        {/* Indicador de acesso para gestão */}
+        {canManage && (
+          <div className="flex justify-end mb-4">
+            <a
+              href="/admin/corretores"
               className="text-xs text-gray-500 hover:text-[#c62828] transition-colors flex items-center gap-1"
             >
               <Settings size={12} />
-              Painel Admin
-            </button>
-            <button
-              onClick={logout}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1"
-            >
-              <Lock size={12} />
-              Bloquear acesso
-            </button>
+              Painel de Gestão
+            </a>
           </div>
         )}
 
@@ -378,7 +322,7 @@ export default function TabelaSection() {
                 <th className="px-3 py-3 text-center font-medium whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1">
                     Status
-                    {!isAuthenticated && <Lock size={11} className="opacity-60" />}
+                    {!canManage && <Lock size={11} className="opacity-60" />}
                   </div>
                 </th>
               </tr>
@@ -416,11 +360,11 @@ export default function TabelaSection() {
                       <button
                         onClick={() => handleStatusChange(unidade.id)}
                         className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium border transition-all duration-200 hover:scale-105 active:scale-95 ${statusColors[unidade.status]}`}
-                        title={isAuthenticated ? `Clique para alterar status (atual: ${statusLabels[unidade.status]})` : "Requer senha para alterar"}
+                        title={canManage ? `Clique para alterar status (atual: ${statusLabels[unidade.status]})` : "Requer senha para alterar"}
                       >
                         <StatusIcon size={12} />
                         {statusLabels[unidade.status]}
-                        {!isAuthenticated && <Lock size={10} className="ml-0.5 opacity-60" />}
+                        {!canManage && <Lock size={10} className="ml-0.5 opacity-60" />}
                       </button>
                       {/* Menu de contexto para unidades reservadas */}
                       {showStatusMenu === unidade.id && unidade.status === "reservado" && (
@@ -476,7 +420,7 @@ export default function TabelaSection() {
             <span className="w-3 h-3 rounded-full bg-red-400"></span> Vendido
           </span>
           <span className="ml-auto text-gray-400 italic">
-            {isAuthenticated ? "Sessão autenticada" : "Protegido por senha"}
+            {canManage ? "Sessão autenticada" : "Protegido por senha"}
           </span>
         </div>
 
@@ -494,25 +438,12 @@ export default function TabelaSection() {
         </div>
       </div>
 
-      {/* Password Modal */}
-      <PasswordModal
-        open={showPasswordModal}
-        onOpenChange={setShowPasswordModal}
-        onSuccess={handlePasswordSuccess}
-      />
-
       {/* Venda Modal */}
       <VendaModal
         open={showVendaModal}
         onOpenChange={setShowVendaModal}
         unidade={vendaUnidade}
         onConfirm={handleVendaConfirm}
-      />
-
-      {/* Admin Panel */}
-      <AdminPanel
-        open={showAdmin}
-        onOpenChange={setShowAdmin}
       />
 
       {/* Cancelamento Modal */}
