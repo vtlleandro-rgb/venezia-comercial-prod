@@ -24,8 +24,9 @@
 | Campo | Valor |
 |---|---|
 | **Repositório** | Local — sem remote configurado |
-| **Git Branch** | N/A — git não inicializado nesta base |
-| **Git Commit SHA** | N/A — git não inicializado nesta base |
+| **Git Branch** | `main` |
+| **Git Commit SHA** | `b647f65` |
+| **Git Tag** | `v1.0-base-oficial` |
 | **Snapshot MD5 dos fontes** | `7d77ce54f5d10a17c260b4288f1670f0` |
 | **Hash build index.js** | `5772a48cf64ba4b6797d6da1b22833b6` (index-DbgHVFTo.js) |
 | **Hash build index.es.js** | `a153a4cc50c51a650cbe77830959adb1` (index.es-CKEuEyZw.js) |
