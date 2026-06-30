@@ -128,7 +128,7 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
     const areaFormatada = unidade ? unidade.area.toFixed(2).replace(".", ",") : `${EMPREENDIMENTO.areaPrivativaMin.toFixed(2).replace(".", ",")} a ${EMPREENDIMENTO.areaPrivativaMax.toFixed(2).replace(".", ",")}`;
 
     const origin = window.location.origin;
-    const logoVeneziaUrl = IMAGENS.logoVenezia.startsWith("http") ? IMAGENS.logoVenezia : `${origin}${IMAGENS.logoVenezia}`;
+    const logoVeneziaUrl = IMAGENS.logoVeneziaOficial.startsWith("http") ? IMAGENS.logoVeneziaOficial : `${origin}${IMAGENS.logoVeneziaOficial}`;
     const logoArteaUrl = IMAGENS.logoArteaColor.startsWith("http") ? IMAGENS.logoArteaColor : `${origin}${IMAGENS.logoArteaColor}`;
     const logoBlueUrl = IMAGENS.logoBlueRealEstate.startsWith("http") ? IMAGENS.logoBlueRealEstate : `${origin}${IMAGENS.logoBlueRealEstate}`;
 

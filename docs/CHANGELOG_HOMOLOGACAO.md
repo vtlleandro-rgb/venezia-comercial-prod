@@ -35,6 +35,28 @@ Descrições genéricas ("ajustes", "melhorias", "correções diversas") são **
 
 ---
 
+### 2026-06-30 — client/src/components/PropostaComercial.tsx
+
+- **Módulo impactado:** PDF da Proposta Comercial
+- **Status anterior:** CONGELADO (homologado visualmente com ressalva: logo ausente no PDF)
+- **Motivo:** Logo do Venezia não aparecia no cabeçalho do PDF gerado pelo Puppeteer. O arquivo `.webp` (logo-venezia.webp) não é carregado pelo Puppeteer headless. Substituído pelo asset `.jpeg` (logo-venezia-oficial.jpeg) que é totalmente compatível.
+- **O que foi alterado:** Linha 131 — `IMAGENS.logoVenezia` → `IMAGENS.logoVeneziaOficial` (apenas a variável de logo; nenhum layout, cálculo ou estrutura alterados)
+- **Evidência:** tsc --noEmit PASS
+- **Autorização:** Auditor externo — sessão 2026-06-30
+
+---
+
+### 2026-06-30 — server/_core/context.ts + .env
+
+- **Módulo impactado:** Autenticação — Gestão de Corretores (/admin/corretores) e Painel do Corretor (/corretor)
+- **Status anterior:** BLOQUEADO (dependia de OAuth não configurado)
+- **Motivo:** Sem `OAUTH_SERVER_URL` configurado, `trpc.auth.me` retorna `null` e ambas as rotas redirecionam para Home. Para homologação local, foi implementado bypass de autenticação controlado por duas variáveis simultâneas: `NODE_ENV=development` E `LOCAL_AUTH_BYPASS=true`. Nunca ativo em produção.
+- **O que foi alterado:** Adicionada constante `LOCAL_BYPASS_ACTIVE` (falsa por padrão; só verdadeira com as duas condições) e usuário mock `LOCAL_BYPASS_USER` com role `admin`. OAuth original intacto e continua sendo o fluxo de produção.
+- **Evidência:** tsc --noEmit PASS + NODE_ENV e LOCAL_AUTH_BYPASS confirmados no .env
+- **Autorização:** Auditor externo — sessão 2026-06-30
+
+---
+
 ### 2026-06-29 — docs/ (criação)
 
 - **Módulo impactado:** Governança do projeto (todos os módulos)
