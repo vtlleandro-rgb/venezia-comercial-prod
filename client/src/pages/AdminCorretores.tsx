@@ -207,6 +207,9 @@ export default function AdminCorretores() {
     });
     setEditingId(corretor.id);
     setShowForm(true);
+    setTimeout(() => {
+      document.getElementById("form-corretor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   const handleSubmitImobiliaria = (e: React.FormEvent) => {
@@ -368,7 +371,7 @@ export default function AdminCorretores() {
 
             {/* Form */}
             {showForm && (
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div id="form-corretor" className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-medium text-[#1a1a2e]">
                     {editingId ? "Editar Corretor" : "Novo Corretor"}

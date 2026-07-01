@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, mediumtext, timestamp, varchar, bigint } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -99,7 +99,7 @@ export type InsertAcesso = typeof acessos.$inferInsert;
 export const propostas = mysqlTable("propostas", {
   id: int("id").autoincrement().primaryKey(),
   codigo: varchar("codigo", { length: 20 }).notNull().unique(),
-  htmlContent: text("htmlContent").notNull(),
+  htmlContent: mediumtext("htmlContent").notNull(),
   corretorId: int("corretorId"),
   nomeCliente: varchar("nomeCliente", { length: 255 }),
   valorImovel: int("valorImovel"),

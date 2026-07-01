@@ -846,7 +846,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
               <option value="">-- Usar valor do slider acima --</option>
               {UNIDADES.filter(u => u.status === "disponivel").map((u) => (
                 <option key={u.id} value={u.id}>
-                  Unidade {u.numero} \u2014 {u.andar}\u00ba Andar \u2014 {u.area.toFixed(2).replace(".", ",")} m\u00b2 \u2014 {formatCurrency(u.valorVenda)}
+                  {`Unidade ${u.numero} \u2014 ${u.andar}\u00ba Andar \u2014 ${u.area.toFixed(2).replace(".", ",")} m\u00b2 \u2014 ${formatCurrency(u.valorVenda)}`}
                 </option>
               ))}
             </select>

@@ -75,6 +75,68 @@ async function preloadImagesAsBase64(container: HTMLElement): Promise<void> {
 }
 
 /**
+ * Calcula posições de corte de página respeitando elementos com page-break-inside:avoid.
+ * Retorna array de offsets Y no canvas (pixels) onde cada página começa/termina.
+ */
+function computePageBreaks(pageElement: HTMLElement, canvas: HTMLCanvasElement, scale: number): number[] {
+  // Altura de uma página A4 em pixels do canvas (proporção 1:√2)
+  const a4Ratio = 297 / 210;
+  const pageHeightPx = Math.floor(canvas.width * a4Ratio);
+
+  if (canvas.height <= pageHeightPx) return [0, canvas.height];
+
+  // Coletar blocos que não devem ser cortados
+  const avoidBreakSelectors = [
+    ".bloco-obra", ".bloco-cef", ".corretor-box", ".hero-box",
+    ".block", ".signatures", ".header",
+  ];
+  const avoidElements: Array<{ top: number; bottom: number }> = [];
+  const containerRect = pageElement.getBoundingClientRect();
+
+  avoidBreakSelectors.forEach((sel) => {
+    pageElement.querySelectorAll(sel).forEach((el) => {
+      const rect = (el as HTMLElement).getBoundingClientRect();
+      avoidElements.push({
+        top: Math.floor((rect.top - containerRect.top) * scale),
+        bottom: Math.ceil((rect.bottom - containerRect.top) * scale),
+      });
+    });
+  });
+
+  const cuts: number[] = [0];
+  let pageStart = 0;
+
+  while (pageStart < canvas.height) {
+    const idealCut = pageStart + pageHeightPx;
+    if (idealCut >= canvas.height) {
+      cuts.push(canvas.height);
+      break;
+    }
+
+    // Verificar se o corte ideal cai dentro de um bloco avoid
+    let safeCut = idealCut;
+    for (const el of avoidElements) {
+      if (el.top < idealCut && el.bottom > idealCut) {
+        // Corte cai dentro deste bloco — recuar para antes do bloco
+        const cutBefore = el.top - 8;
+        if (cutBefore > pageStart + pageHeightPx * 0.4) {
+          safeCut = cutBefore;
+        } else {
+          // Bloco muito grande para recuar — avançar para depois do bloco
+          safeCut = el.bottom + 8;
+        }
+        break;
+      }
+    }
+
+    cuts.push(safeCut);
+    pageStart = safeCut;
+  }
+
+  return cuts;
+}
+
+/**
  * Gera PDF client-side a partir de HTML
  * Usa div oculta no DOM principal (compatível com mobile)
  */
@@ -152,6 +214,9 @@ export async function generatePdfClientSide(options: ClientPdfOptions): Promise<
       ...(mobile ? { imageTimeout: 8000 } : { imageTimeout: 15000 }),
     });
 
+    // Calcular quebras de página respeitando blocos com page-break-inside:avoid
+    const pageBreakCuts = computePageBreaks(pageElement, canvas, scale);
+
     // Gerar PDF com jsPDF
     const pdf = new jsPDF({
       orientation: "portrait",
@@ -162,49 +227,37 @@ export async function generatePdfClientSide(options: ClientPdfOptions): Promise<
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Calcular proporção
-    const canvasRatio = canvas.height / canvas.width;
-    const imgHeight = pdfWidth * canvasRatio;
-
     // Usar JPEG com qualidade adequada para mobile (menor tamanho de arquivo)
     const quality = mobile ? 0.85 : 0.92;
 
-    if (imgHeight <= pdfHeight) {
-      // Cabe em uma página
-      const imgData = canvas.toDataURL("image/jpeg", quality);
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, imgHeight);
-    } else {
-      // Multi-page: dividir canvas em páginas
-      const pageCanvasHeight = Math.floor((pdfHeight / pdfWidth) * canvas.width);
-      let yOffset = 0;
-      let pageNum = 0;
+    // Renderizar cada fatia como página separada
+    for (let i = 0; i < pageBreakCuts.length - 1; i++) {
+      if (i > 0) pdf.addPage();
 
-      while (yOffset < canvas.height) {
-        if (pageNum > 0) pdf.addPage();
+      const yStart = pageBreakCuts[i];
+      const yEnd = pageBreakCuts[i + 1];
+      const sliceHeight = yEnd - yStart;
 
-        const sliceHeight = Math.min(pageCanvasHeight, canvas.height - yOffset);
-        const pageCanvas = document.createElement("canvas");
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = sliceHeight;
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeight;
 
-        const ctx = pageCanvas.getContext("2d");
-        if (ctx) {
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, canvas.width, sliceHeight);
-          ctx.drawImage(
-            canvas,
-            0, yOffset, canvas.width, sliceHeight,
-            0, 0, canvas.width, sliceHeight
-          );
-        }
-
-        const pageImgData = pageCanvas.toDataURL("image/jpeg", quality);
-        const pageImgHeight = (sliceHeight / canvas.width) * pdfWidth;
-        pdf.addImage(pageImgData, "JPEG", 0, 0, pdfWidth, pageImgHeight);
-
-        yOffset += pageCanvasHeight;
-        pageNum++;
+      const ctx = pageCanvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, sliceHeight);
+        ctx.drawImage(
+          canvas,
+          0, yStart, canvas.width, sliceHeight,
+          0, 0, canvas.width, sliceHeight
+        );
       }
+
+      const pageImgData = pageCanvas.toDataURL("image/jpeg", quality);
+      const pageImgHeight = (sliceHeight / canvas.width) * pdfWidth;
+      // Se a fatia for menor que a página PDF, centralizar no topo
+      const renderHeight = Math.min(pageImgHeight, pdfHeight);
+      pdf.addImage(pageImgData, "JPEG", 0, 0, pdfWidth, renderHeight);
     }
 
     // Download — estratégia robusta para todos os dispositivos
