@@ -122,6 +122,55 @@ export async function setPasswordHash(userId: number, passwordHash: string) {
   await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 }
 
+export async function listUsers(roles?: string[]) {
+  const db = await getDb();
+  if (!db) return [];
+  const { inArray } = await import("drizzle-orm");
+  const query = db.select({
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    role: users.role,
+    lastSignedIn: users.lastSignedIn,
+  }).from(users);
+  if (roles && roles.length > 0) {
+    return query.where(inArray(users.role, roles as any[]));
+  }
+  return query;
+}
+
+export async function createUserWithPassword(params: {
+  email: string;
+  name: string;
+  password: string;
+  role: "admin" | "gerente" | "user";
+}) {
+  const { hashPassword } = await import("./_core/sdk");
+  const { randomUUID } = await import("crypto");
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(users).where(eq(users.email, params.email.toLowerCase())).limit(1);
+  if (existing.length > 0) throw new Error("E-mail já cadastrado.");
+  const passwordHash = await hashPassword(params.password);
+  const openId = `local:${randomUUID()}`;
+  await db.insert(users).values({
+    openId,
+    email: params.email.toLowerCase(),
+    name: params.name,
+    loginMethod: "email",
+    passwordHash,
+    role: params.role,
+    lastSignedIn: new Date(),
+  });
+}
+
+export async function deleteUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Não permite deletar o próprio usuário admin
+  await db.delete(users).where(eq(users.id, userId));
+}
+
 export async function countAdmins(): Promise<number> {
   const db = await getDb();
   if (!db) return 0;

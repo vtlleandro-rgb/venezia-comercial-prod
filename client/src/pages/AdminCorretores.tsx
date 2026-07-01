@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
   Copy,
   Check,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,8 +37,8 @@ const formatDate = (d: Date | string | null) => {
 };
 
 export default function AdminCorretores() {
-  const { isAuthenticated, canManage, loading, user } = useAuth({ redirectOnUnauthenticated: true });
-  const [tab, setTab] = useState<"corretores" | "imobiliarias" | "leads" | "analytics">("corretores");
+  const { isAuthenticated, canManage, loading, user, isAdmin } = useAuth({ redirectOnUnauthenticated: true });
+  const [tab, setTab] = useState<"corretores" | "imobiliarias" | "leads" | "analytics" | "gerentes">("corretores");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
@@ -60,6 +61,55 @@ export default function AdminCorretores() {
     email: "",
   });
   const [showImobForm, setShowImobForm] = useState(false);
+
+  // Gerentes
+  const [gerenteForm, setGerenteForm] = useState({ nome: "", email: "", senha: "" });
+  const [showGerenteForm, setShowGerenteForm] = useState(false);
+  const [gerentes, setGerentes] = useState<any[]>([]);
+  const [gerentesLoading, setGerentesLoading] = useState(false);
+
+  const loadGerentes = async () => {
+    setGerentesLoading(true);
+    try {
+      const res = await fetch("/api/users", { credentials: "include" });
+      if (res.ok) setGerentes(await res.json());
+    } catch { /* ignore */ } finally { setGerentesLoading(false); }
+  };
+
+  const handleCreateGerente = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gerenteForm.nome || !gerenteForm.email || !gerenteForm.senha) {
+      toast.error("Preencha nome, e-mail e senha.");
+      return;
+    }
+    if (gerenteForm.senha.length < 8) {
+      toast.error("Senha deve ter ao menos 8 caracteres.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: gerenteForm.nome, email: gerenteForm.email, password: gerenteForm.senha, role: "gerente" }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Erro ao criar gerente."); return; }
+      toast.success("Gerente cadastrado com sucesso!");
+      setGerenteForm({ nome: "", email: "", senha: "" });
+      setShowGerenteForm(false);
+      loadGerentes();
+    } catch { toast.error("Erro de conexão."); }
+  };
+
+  const handleDeleteGerente = async (id: number) => {
+    if (!confirm("Remover este gerente?")) return;
+    try {
+      const res = await fetch(`/api/users/${id}`, { method: "DELETE", credentials: "include" });
+      if (res.ok) { toast.success("Gerente removido."); loadGerentes(); }
+      else toast.error("Erro ao remover.");
+    } catch { toast.error("Erro de conexão."); }
+  };
 
   // tRPC queries - apenas habilitadas para admin ou gerente
   const corretoresQuery = trpc.corretores.list.useQuery(undefined, { enabled: canManage, retry: false });
@@ -181,6 +231,10 @@ export default function AdminCorretores() {
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
+  useEffect(() => {
+    if (tab === "gerentes" && isAdmin) loadGerentes();
+  }, [tab, isAdmin]);
+
   // Analytics data
   const analyticsData = useMemo(() => {
     if (!statsQuery.data || !corretoresQuery.data) return [];
@@ -267,12 +321,13 @@ export default function AdminCorretores() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex overflow-x-auto">
-            {[
+            {([
               { key: "corretores", label: "Corretores", icon: Users },
               { key: "imobiliarias", label: "Imobiliárias", icon: Building2 },
               { key: "leads", label: "Leads", icon: UserPlus },
               { key: "analytics", label: "Analytics", icon: BarChart3 },
-            ].map(({ key, label, icon: Icon }) => (
+              ...(isAdmin ? [{ key: "gerentes", label: "Gerentes", icon: ShieldCheck }] : []),
+            ] as { key: string; label: string; icon: any }[]).map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
                 onClick={() => setTab(key as any)}
@@ -717,6 +772,96 @@ export default function AdminCorretores() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+        {/* === GERENTES === */}
+        {tab === "gerentes" && isAdmin && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Gerentes Comerciais</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Usuários com acesso a reservas, vendas e gestão de corretores</p>
+              </div>
+              <button
+                onClick={() => setShowGerenteForm(!showGerenteForm)}
+                className="flex items-center gap-2 px-4 py-2 bg-[#c62828] text-white text-sm font-medium rounded-lg hover:bg-[#b71c1c] transition-colors"
+              >
+                <Plus size={16} />
+                Novo Gerente
+              </button>
+            </div>
+
+            {showGerenteForm && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Cadastrar Gerente</h3>
+                <form onSubmit={handleCreateGerente} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Nome completo *</label>
+                      <Input value={gerenteForm.nome} onChange={e => setGerenteForm({ ...gerenteForm, nome: e.target.value })} placeholder="Nome do gerente" required />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">E-mail *</label>
+                      <Input type="email" value={gerenteForm.email} onChange={e => setGerenteForm({ ...gerenteForm, email: e.target.value })} placeholder="gerente@email.com" required />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Senha inicial * (mín. 8 caracteres)</label>
+                      <Input type="password" value={gerenteForm.senha} onChange={e => setGerenteForm({ ...gerenteForm, senha: e.target.value })} placeholder="Senha segura" required minLength={8} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button type="submit" className="px-4 py-2 bg-[#c62828] text-white text-sm font-medium rounded-lg hover:bg-[#b71c1c] transition-colors">
+                      Cadastrar
+                    </button>
+                    <button type="button" onClick={() => { setShowGerenteForm(false); setGerenteForm({ nome: "", email: "", senha: "" }); }} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors">
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              {gerentesLoading ? (
+                <div className="p-8 text-center text-gray-400 text-sm">Carregando...</div>
+              ) : gerentes.length === 0 ? (
+                <div className="p-8 text-center text-gray-400 text-sm">Nenhum gerente cadastrado ainda.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">E-mail</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Último acesso</th>
+                      <th className="px-4 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {gerentes.map((g: any) => (
+                      <tr key={g.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{g.name ?? "—"}</td>
+                        <td className="px-4 py-3 text-gray-600">{g.email}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${g.role === "admin" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
+                            <ShieldCheck size={10} />
+                            {g.role === "admin" ? "Administrador" : "Gerente"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(g.lastSignedIn)}</td>
+                        <td className="px-4 py-3 text-right">
+                          {g.role !== "admin" && (
+                            <button onClick={() => handleDeleteGerente(g.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded" title="Remover gerente">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         )}
       </div>

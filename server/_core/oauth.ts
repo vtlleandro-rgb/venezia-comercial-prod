@@ -83,9 +83,73 @@ export function registerOAuthRoutes(app: Express) {
   });
 
   // ── GET /api/auth/setup-status ───────────────────────────────────────────
-  // Retorna se já existe algum admin. Usado pelo script de setup.
   app.get("/api/auth/setup-status", async (_req: Request, res: Response) => {
     const count = await db.countAdmins();
     res.json({ hasAdmin: count > 0 });
   });
+
+  // ── GET /api/users ────────────────────────────────────────────────────────
+  // Lista gerentes e admins. Requer sessão admin.
+  app.get("/api/users", async (req: Request, res: Response) => {
+    const session = await getSession(req);
+    if (!session || (session.role !== "admin" && session.role !== "gerente")) {
+      res.status(403).json({ error: "Acesso negado." });
+      return;
+    }
+    const list = await db.listUsers(["admin", "gerente"]);
+    res.json(list);
+  });
+
+  // ── POST /api/users ───────────────────────────────────────────────────────
+  // Cria gerente (ou admin). Requer sessão admin.
+  app.post("/api/users", async (req: Request, res: Response) => {
+    const session = await getSession(req);
+    if (!session || session.role !== "admin") {
+      res.status(403).json({ error: "Apenas administradores podem criar usuários." });
+      return;
+    }
+    const { email, name, password, role } = req.body ?? {};
+    if (!email || !name || !password || !["gerente", "admin"].includes(role)) {
+      res.status(400).json({ error: "Campos obrigatórios: email, name, password, role (gerente|admin)." });
+      return;
+    }
+    if (password.length < 8) {
+      res.status(400).json({ error: "Senha deve ter ao menos 8 caracteres." });
+      return;
+    }
+    try {
+      await db.createUserWithPassword({ email, name, password, role });
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message ?? "Erro ao criar usuário." });
+    }
+  });
+
+  // ── DELETE /api/users/:id ─────────────────────────────────────────────────
+  // Remove um gerente. Requer sessão admin.
+  app.delete("/api/users/:id", async (req: Request, res: Response) => {
+    const session = await getSession(req);
+    if (!session || session.role !== "admin") {
+      res.status(403).json({ error: "Apenas administradores podem remover usuários." });
+      return;
+    }
+    const id = Number(req.params.id);
+    if (!id) { res.status(400).json({ error: "ID inválido." }); return; }
+    await db.deleteUser(id);
+    res.json({ ok: true });
+  });
+}
+
+// ── helper ────────────────────────────────────────────────────────────────────
+async function getSession(req: Request) {
+  const cookieHeader = req.headers.cookie ?? "";
+  const cookieMap = new Map(
+    cookieHeader.split(";").map((c) => c.trim().split("=") as [string, string]).filter(([k]) => k)
+  );
+  const { COOKIE_NAME } = await import("@shared/const");
+  const { sdk } = await import("./sdk");
+  const session = await sdk.verifySession(cookieMap.get(COOKIE_NAME));
+  if (!session) return null;
+  const user = await import("../db").then(m => m.getUserByOpenId ? m.getUserByOpenId(session.openId) : null);
+  return user as { role: string; openId: string } | null;
 }

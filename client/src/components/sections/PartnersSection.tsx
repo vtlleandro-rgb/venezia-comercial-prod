@@ -6,24 +6,28 @@ const partners = [
     name: "ARTEÁ Empreendimentos Imobiliários",
     logo: IMAGENS.logoArteaColor,
     bgClass: "bg-white",
+    href: "https://www.instagram.com/arteaempreendimentos?igsh=MXdnaWNzemlnbnlu",
   },
   {
     role: "Construção",
-    name: "RB Construtora",
+    name: "REB Construções",
     logo: IMAGENS.logoRbConstrutora,
     bgClass: "bg-white",
+    href: "https://www.instagram.com/rebconstrucoes?igsh=MTdqdjN2anl0NXRpZQ==",
   },
   {
     role: "Vendas",
     name: "Blue Real Estate",
     logo: IMAGENS.logoBlueRealEstate,
     bgClass: "bg-white",
+    href: "https://www.instagram.com/bluerealestateimob?igsh=enliNTh1dGludWk2",
   },
   {
     role: "Incorporação",
     name: "SPE Residencial Venezia",
     logo: IMAGENS.logoVeneziaOficial,
     bgClass: "bg-[#0a0a0a]",
+    href: null,
   },
 ];
 
@@ -48,9 +52,8 @@ export default function PartnersSection() {
 
         {/* Grid de parceiros */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {partners.map((partner) => (
-            <div key={partner.role} className="flex flex-col items-center text-center group">
-              {/* Card da logo */}
+          {partners.map((partner) => {
+            const card = (
               <div
                 className={`${partner.bgClass} w-full aspect-square max-w-[180px] rounded-xl shadow-md border border-gray-100 flex items-center justify-center p-5 transition-all duration-300 group-hover:shadow-lg group-hover:scale-[1.02]`}
               >
@@ -61,15 +64,23 @@ export default function PartnersSection() {
                   loading="lazy"
                 />
               </div>
-              {/* Texto */}
-              <p className="mt-4 text-[#c62828] text-[11px] font-semibold uppercase tracking-widest">
-                {partner.role}
-              </p>
-              <p className="mt-1 text-[#1a1a2e] text-sm font-medium leading-tight">
-                {partner.name}
-              </p>
-            </div>
-          ))}
+            );
+            return (
+              <div key={partner.role} className="flex flex-col items-center text-center group">
+                {partner.href ? (
+                  <a href={partner.href} target="_blank" rel="noopener noreferrer" aria-label={`Instagram ${partner.name}`}>
+                    {card}
+                  </a>
+                ) : card}
+                <p className="mt-4 text-[#c62828] text-[11px] font-semibold uppercase tracking-widest">
+                  {partner.role}
+                </p>
+                <p className="mt-1 text-[#1a1a2e] text-sm font-medium leading-tight">
+                  {partner.name}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

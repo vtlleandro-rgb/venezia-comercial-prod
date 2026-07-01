@@ -112,8 +112,8 @@ export default function TabelaSection() {
 
     const currentStatus = unidadesStatus[id];
 
-    // Se está reservado, mostrar menu com opções: Vender ou Tornar Disponível
-    if (currentStatus === "reservado") {
+    // Se está reservado ou vendido, mostrar menu de contexto
+    if (currentStatus === "reservado" || currentStatus === "vendido") {
       setShowStatusMenu(showStatusMenu === id ? null : id);
       return;
     }
@@ -382,6 +382,17 @@ export default function TabelaSection() {
                           >
                             <AlertTriangle size={12} />
                             Cancelar Reserva
+                          </button>
+                        </div>
+                      )}
+                      {showStatusMenu === unidade.id && unidade.status === "vendido" && (
+                        <div className="absolute right-2 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px]">
+                          <button
+                            onClick={() => { setShowStatusMenu(null); handleRevertToDisponivel(unidade.id); }}
+                            className="w-full text-left px-4 py-2 text-xs hover:bg-amber-50 text-amber-700 flex items-center gap-2 transition-colors"
+                          >
+                            <AlertTriangle size={12} />
+                            Cancelar Venda
                           </button>
                         </div>
                       )}

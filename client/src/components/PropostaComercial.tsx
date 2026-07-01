@@ -159,7 +159,7 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#1a1a2e;line
 .page{max-width:800px;margin:0 auto;padding:30px 40px}
 .header{text-align:center;padding:24px 0;border-bottom:3px solid #c62828;margin-bottom:24px}
 .header .logos{display:flex;justify-content:center;align-items:center;gap:24px;margin-bottom:12px}
-.header .logos img{height:45px}
+.header .logos img{height:45px;background:#fff;padding:4px;border-radius:4px}
 .header h1{font-size:28px;color:#1a1a2e;letter-spacing:4px;font-weight:700;margin:0}
 .header h2{font-size:11px;color:#666;font-weight:400;letter-spacing:5px;text-transform:uppercase;margin-top:2px}
 .header .spe{font-size:9px;color:#999;margin-top:8px;letter-spacing:1px}
@@ -171,6 +171,9 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#1a1a2e;line
 .hero-box .sub-text{font-size:11px;opacity:0.85;margin-top:6px}
 
 .block{margin-bottom:20px;page-break-inside:avoid}
+.bloco-obra,.bloco-cef,.corretor-box,.hero-box{page-break-inside:avoid}
+.header{page-break-after:avoid}
+.signatures{page-break-inside:avoid;margin-top:auto}
 .block-title{font-size:12px;font-weight:700;color:#c62828;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #c62828}
 
 .bloco-obra{background:#fafafa!important;border:2px solid #c62828;border-radius:12px;padding:20px;margin-bottom:20px;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
@@ -329,13 +332,17 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
 
   // ===== AÇÕES =====
   const handleVisualizar = useCallback(async () => {
-    const html = await gerarHtmlProposta();
+    // Abrir janela ANTES do await — popup blockers só permitem window.open() em handlers síncronos
     const win = window.open("", "_blank");
-    if (win) {
-      win.document.write(html);
-      win.document.close();
+    if (!win) {
+      toast.error("Popup bloqueado. Permita popups para este site e tente novamente.");
+      return;
     }
-    toast.success("Proposta aberta em nova aba.");
+    win.document.write("<html><body><p style='font-family:sans-serif;padding:20px'>Gerando proposta...</p></body></html>");
+    const html = await gerarHtmlProposta();
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
   }, [gerarHtmlProposta]);
 
   // Baixar PDF server-side (alta qualidade via Puppeteer)
