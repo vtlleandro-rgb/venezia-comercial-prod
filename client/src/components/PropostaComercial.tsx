@@ -145,7 +145,7 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
     const areaFormatada = unidade ? unidade.area.toFixed(2).replace(".", ",") : `${EMPREENDIMENTO.areaPrivativaMin.toFixed(2).replace(".", ",")} a ${EMPREENDIMENTO.areaPrivativaMax.toFixed(2).replace(".", ",")}`;
 
     const [logoVeneziaUrl, logoArteaUrl, logoBlueUrl] = await Promise.all([
-      toBase64Url(IMAGENS.logoVeneziaOficial),
+      toBase64Url(IMAGENS.logoVenezia),       // WebP com possível transparência (sem fundo preto)
       toBase64Url(IMAGENS.logoArteaColor),
       toBase64Url(IMAGENS.logoBlueRealEstate),
     ]);
