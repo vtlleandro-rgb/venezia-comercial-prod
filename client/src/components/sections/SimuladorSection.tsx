@@ -25,7 +25,7 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
   const [isCotista, setIsCotista] = useState(false);
   const [showProposta, setShowProposta] = useState(false);
 
-  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 30_000 });
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
   const valorMin = unidadesQuery.data
     ? Math.min(...(unidadesQuery.data as any[]).map((u: any) => u.valorVenda))
     : EMPREENDIMENTO.valorMin;
