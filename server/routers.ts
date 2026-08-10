@@ -32,6 +32,8 @@ import {
   salvarCancelamentoReserva,
   listPropostasComerciais,
   salvarPropostaComercial,
+  getConfiguracao,
+  setConfiguracao,
 } from "./db";
 
 // ─── Corretores Router (público + admin) ────────────────────────────────────
@@ -408,6 +410,45 @@ const comercialRouter = router({
     }),
 });
 
+// ─── Configurações Router (preços dinâmicos) ─────────────────────────────────
+
+const UnidadeSchema = z.object({
+  id: z.string(),
+  numero: z.string(),
+  andar: z.number(),
+  final: z.string(),
+  area: z.number(),
+  valorVenda: z.number(),
+  valorComDocumentacao: z.number(),
+  entrada20: z.number(),
+  entradaMenosReforco: z.number(),
+  parcela36x: z.number(),
+  reforcoChaves: z.number(),
+  financCEF: z.number(),
+  status: z.enum(["disponivel", "reservado", "vendido"]),
+  precoM2: z.number(),
+  observacao: z.string().optional(),
+});
+
+const configuracoesRouter = router({
+  getUnidades: publicProcedure.query(async () => {
+    const raw = await getConfiguracao("unidades");
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }),
+
+  setUnidades: adminProcedure
+    .input(z.array(UnidadeSchema))
+    .mutation(async ({ input }) => {
+      await setConfiguracao("unidades", JSON.stringify(input));
+      return { success: true };
+    }),
+});
+
 // ─── App Router ─────────────────────────────────────────────────────────────
 
 export const appRouter = router({
@@ -453,6 +494,7 @@ export const appRouter = router({
   acessos: acessosRouter,
   propostas: propostasRouter,
   comercial: comercialRouter,
+  configuracoes: configuracoesRouter,
 });
 
 export type AppRouter = typeof appRouter;
