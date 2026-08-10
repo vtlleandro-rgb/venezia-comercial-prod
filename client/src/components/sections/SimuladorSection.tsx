@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { EMPREENDIMENTO } from "@/data/empreendimento";
+import { trpc } from "@/lib/trpc";
 import { Calculator, Landmark, CreditCard, Info, FileText, DollarSign } from "lucide-react";
 import PropostaComercial from "@/components/PropostaComercial";
 import { calcularSimulacaoCEF, CEF_PARAMS } from "@/lib/simuladorCEF";
@@ -23,6 +24,14 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
   const [prazoMeses, setPrazoMeses] = useState(420);
   const [isCotista, setIsCotista] = useState(false);
   const [showProposta, setShowProposta] = useState(false);
+
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 30_000 });
+  const valorMin = unidadesQuery.data
+    ? Math.min(...(unidadesQuery.data as any[]).map((u: any) => u.valorVenda))
+    : EMPREENDIMENTO.valorMin;
+  const valorMax = unidadesQuery.data
+    ? Math.max(...(unidadesQuery.data as any[]).map((u: any) => u.valorVenda))
+    : EMPREENDIMENTO.valorMax;
 
   const simulacao = useMemo(() => {
     return calcularSimulacaoCEF({ valorImovel, percentualEntrada, reforcos, prazoMeses, isCotista });
@@ -71,7 +80,7 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-gray-700">Valor do Imóvel</label>
               <span className="text-sm text-gray-500">
-                {formatCurrency(EMPREENDIMENTO.valorMin)} — {formatCurrency(EMPREENDIMENTO.valorMax)}
+                {formatCurrency(valorMin)} — {formatCurrency(valorMax)}
               </span>
             </div>
             <div className="text-center mb-3">
@@ -79,16 +88,16 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
             </div>
             <input
               type="range"
-              min={EMPREENDIMENTO.valorMin}
-              max={EMPREENDIMENTO.valorMax}
+              min={valorMin}
+              max={valorMax}
               step={1000}
-              value={valorImovel}
+              value={Math.min(Math.max(valorImovel, valorMin), valorMax)}
               onChange={(e) => setValorImovel(Number(e.target.value))}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#c62828]"
             />
             <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>{formatCurrency(EMPREENDIMENTO.valorMin)}</span>
-              <span>{formatCurrency(EMPREENDIMENTO.valorMax)}</span>
+              <span>{formatCurrency(valorMin)}</span>
+              <span>{formatCurrency(valorMax)}</span>
             </div>
           </div>
 
