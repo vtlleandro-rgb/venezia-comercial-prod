@@ -78,7 +78,7 @@ export default function TabelaSection() {
   const { unidadesStatus, updateStatus } = useUnidadesStatus();
 
   // Preços dinâmicos via tRPC (fallback para UNIDADES estático)
-  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 30_000 });
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
   const UNIDADES_DATA: Unidade[] = (unidadesQuery.data as Unidade[] | null) ?? UNIDADES;
 
   const unidadesComStatus: Unidade[] = useMemo(
