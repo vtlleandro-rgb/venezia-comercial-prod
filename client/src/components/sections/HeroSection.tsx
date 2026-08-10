@@ -1,9 +1,15 @@
 import { IMAGENS, EMPREENDIMENTO } from "@/data/empreendimento";
+import { trpc } from "@/lib/trpc";
 
 export default function HeroSection() {
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
+
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 60_000 });
+  const valorMinDisplay = unidadesQuery.data
+    ? "R$ " + Math.round(Math.min(...(unidadesQuery.data as any[]).map((u: any) => u.valorVenda)) / 1000) + "k"
+    : "R$ 375k";
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -68,7 +74,7 @@ export default function HeroSection() {
             { value: "12", label: "Unidades" },
             { value: "2", label: "Suítes" },
             { value: "60m²", label: "Até" },
-            { value: "R$ 375k", label: "A partir de" },
+            { value: valorMinDisplay, label: "A partir de" },
           ].map((item) => (
             <div key={item.label} className="text-center">
               <p className="text-white text-2xl md:text-3xl font-semibold font-sans">{item.value}</p>
