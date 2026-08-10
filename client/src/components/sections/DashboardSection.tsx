@@ -34,10 +34,10 @@ function RelatorioConsolidado({
 }) {
   const { log, dadosVenda } = useAuth();
 
-  // Computar VGV a partir das unidades recebidas (suporta preços dinâmicos)
-  const vgvTotal = useMemo(() => unidades.reduce((s, u) => s + u.valorVenda, 0), [unidades]);
-  const vgvComDocumentacao = useMemo(() => unidades.reduce((s, u) => s + u.valorComDocumentacao, 0), [unidades]);
-  const ticketMedio = useMemo(() => Math.round(vgvTotal / (unidades.length || 12)), [vgvTotal, unidades]);
+  // Calcular sempre fresh — sem useMemo para garantir sync com as linhas por andar
+  const vgvTotal = unidades.reduce((s, u) => s + u.valorVenda, 0);
+  const vgvComDocumentacao = unidades.reduce((s, u) => s + u.valorComDocumentacao, 0);
+  const ticketMedio = Math.round(vgvTotal / (unidades.length || 12));
 
   // Dados por andar
   const dadosPorAndar = useMemo(() => {
@@ -185,13 +185,19 @@ function RelatorioConsolidado({
                   </tr>
                 );
               })}
-              <tr className="bg-white/5 font-semibold">
-                <td className="py-2 px-3 text-white">TOTAL</td>
-                <td className="py-2 px-3 text-right text-white">{formatCurrency(vgvTotal)}</td>
-                <td className="py-2 px-3 text-right text-[#c62828]">{formatCurrency(vgvComDocumentacao)}</td>
-                <td className="py-2 px-3 text-right text-amber-400">{formatCurrency(vgvComDocumentacao - vgvTotal)}</td>
-                <td className="py-2 px-3 text-center text-white/50">4%</td>
-              </tr>
+              {(() => {
+                const totalSemDoc = unidades.reduce((s, u) => s + u.valorVenda, 0);
+                const totalComDoc = unidades.reduce((s, u) => s + u.valorComDocumentacao, 0);
+                return (
+                  <tr className="bg-white/5 font-semibold">
+                    <td className="py-2 px-3 text-white">TOTAL</td>
+                    <td className="py-2 px-3 text-right text-white">{formatCurrency(totalSemDoc)}</td>
+                    <td className="py-2 px-3 text-right text-[#c62828]">{formatCurrency(totalComDoc)}</td>
+                    <td className="py-2 px-3 text-right text-amber-400">{formatCurrency(totalComDoc - totalSemDoc)}</td>
+                    <td className="py-2 px-3 text-center text-white/50">4%</td>
+                  </tr>
+                );
+              })()}
             </tbody>
           </table>
         </div>
@@ -312,9 +318,9 @@ export default function DashboardSection() {
     [unidadesStatus, UNIDADES_DATA]
   );
 
-  // VGV e ticket médio — todos calculados a partir de `unidades` (fonte única)
-  const vgvTotal = useMemo(() => unidades.reduce((s, u) => s + u.valorVenda, 0), [unidades]);
-  const ticketMedio = useMemo(() => Math.round(vgvTotal / (unidades.length || 12)), [vgvTotal, unidades]);
+  // VGV e ticket médio — sem useMemo, sempre atualizados junto com unidades
+  const vgvTotal = unidades.reduce((s, u) => s + u.valorVenda, 0);
+  const ticketMedio = Math.round(vgvTotal / (unidades.length || 12));
 
   const disponiveis = unidades.filter((u) => u.status === "disponivel").length;
   const reservados = unidades.filter((u) => u.status === "reservado").length;
@@ -533,7 +539,7 @@ ${[4, 3, 2, 1].map((andar) => {
           </div>
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-lg">
             <TrendingUp size={20} className="text-amber-400 mb-2" />
-            <p className="text-2xl md:text-3xl font-semibold">R$ {EMPREENDIMENTO.precoM2Min} - {EMPREENDIMENTO.precoM2Max}</p>
+            <p className="text-2xl md:text-3xl font-semibold">R$ {Math.min(...unidades.map(u => u.precoM2)).toLocaleString("pt-BR")} - {Math.max(...unidades.map(u => u.precoM2)).toLocaleString("pt-BR")}</p>
             <p className="text-white/50 text-xs mt-1">R$/m² (range)</p>
           </div>
         </div>
