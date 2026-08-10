@@ -312,9 +312,9 @@ export default function DashboardSection() {
     [unidadesStatus, UNIDADES_DATA]
   );
 
-  // VGV e ticket médio computados dinamicamente
-  const vgvTotal = useMemo(() => UNIDADES_DATA.reduce((s, u) => s + u.valorVenda, 0), [UNIDADES_DATA]);
-  const ticketMedio = useMemo(() => Math.round(vgvTotal / (UNIDADES_DATA.length || 12)), [vgvTotal, UNIDADES_DATA]);
+  // VGV e ticket médio — todos calculados a partir de `unidades` (fonte única)
+  const vgvTotal = useMemo(() => unidades.reduce((s, u) => s + u.valorVenda, 0), [unidades]);
+  const ticketMedio = useMemo(() => Math.round(vgvTotal / (unidades.length || 12)), [vgvTotal, unidades]);
 
   const disponiveis = unidades.filter((u) => u.status === "disponivel").length;
   const reservados = unidades.filter((u) => u.status === "reservado").length;
