@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { UNIDADES, EMPREENDIMENTO, type Unidade, type UnidadeStatus } from "@/data/empreendimento";
+import { trpc } from "@/lib/trpc";
 import { BarChart3, TrendingUp, Target, DollarSign, Check, Lock, ShieldCheck, PieChart, Printer } from "lucide-react";
 import { useAuth, type DadosVenda } from "@/contexts/AuthContext";
 import PasswordModal from "@/components/PasswordModal";
@@ -32,6 +33,11 @@ function RelatorioConsolidado({
   disponiveis: number;
 }) {
   const { log, dadosVenda } = useAuth();
+
+  // Computar VGV a partir das unidades recebidas (suporta preços dinâmicos)
+  const vgvTotal = useMemo(() => unidades.reduce((s, u) => s + u.valorVenda, 0), [unidades]);
+  const vgvComDocumentacao = useMemo(() => unidades.reduce((s, u) => s + u.valorComDocumentacao, 0), [unidades]);
+  const ticketMedio = useMemo(() => Math.round(vgvTotal / (unidades.length || 12)), [vgvTotal, unidades]);
 
   // Dados por andar
   const dadosPorAndar = useMemo(() => {
@@ -97,7 +103,7 @@ function RelatorioConsolidado({
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-white/5">
               <span className="text-white/60 text-sm">VGV Total</span>
-              <span className="text-white font-semibold">{formatCurrency(EMPREENDIMENTO.vgvTotal)}</span>
+              <span className="text-white font-semibold">{formatCurrency(vgvTotal)}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-white/5">
               <span className="text-white/60 text-sm">VGV Vendido</span>
@@ -115,7 +121,7 @@ function RelatorioConsolidado({
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-white/5">
               <span className="text-white/60 text-sm">Ticket Médio</span>
-              <span className="text-white font-semibold">{formatCurrency(EMPREENDIMENTO.ticketMedio)}</span>
+              <span className="text-white font-semibold">{formatCurrency(ticketMedio)}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-white/5">
               <span className="text-white/60 text-sm">Absorção (Vendas)</span>
@@ -139,17 +145,17 @@ function RelatorioConsolidado({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white/5 border border-white/10 p-4 rounded-lg text-center">
             <p className="text-white/50 text-xs mb-2 uppercase">VGV sem Documentação</p>
-            <p className="text-2xl font-semibold text-white">{formatCurrency(EMPREENDIMENTO.vgvTotal)}</p>
+            <p className="text-2xl font-semibold text-white">{formatCurrency(vgvTotal)}</p>
             <p className="text-white/40 text-xs mt-1">Valor de venda das unidades</p>
           </div>
           <div className="bg-white/5 border border-white/10 p-4 rounded-lg text-center">
             <p className="text-white/50 text-xs mb-2 uppercase">VGV com Documentação</p>
-            <p className="text-2xl font-semibold text-[#c62828]">{formatCurrency(EMPREENDIMENTO.vgvComDocumentacao)}</p>
+            <p className="text-2xl font-semibold text-[#c62828]">{formatCurrency(vgvComDocumentacao)}</p>
             <p className="text-white/40 text-xs mt-1">Valor com custos de documentação (4%)</p>
           </div>
           <div className="bg-white/5 border border-white/10 p-4 rounded-lg text-center">
             <p className="text-white/50 text-xs mb-2 uppercase">Diferença (Documentação)</p>
-            <p className="text-2xl font-semibold text-amber-400">{formatCurrency(EMPREENDIMENTO.vgvComDocumentacao - EMPREENDIMENTO.vgvTotal)}</p>
+            <p className="text-2xl font-semibold text-amber-400">{formatCurrency(vgvComDocumentacao - vgvTotal)}</p>
             <p className="text-white/40 text-xs mt-1">Receita adicional com documentação (4%)</p>
           </div>
         </div>
@@ -181,9 +187,9 @@ function RelatorioConsolidado({
               })}
               <tr className="bg-white/5 font-semibold">
                 <td className="py-2 px-3 text-white">TOTAL</td>
-                <td className="py-2 px-3 text-right text-white">{formatCurrency(EMPREENDIMENTO.vgvTotal)}</td>
-                <td className="py-2 px-3 text-right text-[#c62828]">{formatCurrency(EMPREENDIMENTO.vgvComDocumentacao)}</td>
-                <td className="py-2 px-3 text-right text-amber-400">{formatCurrency(EMPREENDIMENTO.vgvComDocumentacao - EMPREENDIMENTO.vgvTotal)}</td>
+                <td className="py-2 px-3 text-right text-white">{formatCurrency(vgvTotal)}</td>
+                <td className="py-2 px-3 text-right text-[#c62828]">{formatCurrency(vgvComDocumentacao)}</td>
+                <td className="py-2 px-3 text-right text-amber-400">{formatCurrency(vgvComDocumentacao - vgvTotal)}</td>
                 <td className="py-2 px-3 text-center text-white/50">4%</td>
               </tr>
             </tbody>
@@ -297,10 +303,18 @@ export default function DashboardSection() {
   const [vendaUnidade, setVendaUnidade] = useState<Unidade | null>(null);
   const [vendaPendingId, setVendaPendingId] = useState<string | null>(null);
 
+  // Preços dinâmicos via tRPC
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 30_000 });
+  const UNIDADES_DATA: typeof UNIDADES = (unidadesQuery.data as typeof UNIDADES | null) ?? UNIDADES;
+
   const unidades = useMemo(
-    () => UNIDADES.map((u) => ({ ...u, status: unidadesStatus[u.id] || u.status })),
-    [unidadesStatus]
+    () => UNIDADES_DATA.map((u) => ({ ...u, status: unidadesStatus[u.id] || u.status })),
+    [unidadesStatus, UNIDADES_DATA]
   );
+
+  // VGV e ticket médio computados dinamicamente
+  const vgvTotal = useMemo(() => UNIDADES_DATA.reduce((s, u) => s + u.valorVenda, 0), [UNIDADES_DATA]);
+  const ticketMedio = useMemo(() => Math.round(vgvTotal / (UNIDADES_DATA.length || 12)), [vgvTotal, UNIDADES_DATA]);
 
   const disponiveis = unidades.filter((u) => u.status === "disponivel").length;
   const reservados = unidades.filter((u) => u.status === "reservado").length;
@@ -355,7 +369,7 @@ export default function DashboardSection() {
   <p style="margin-top:5px;">Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
 </div>
 <div class="kpis">
-  <div class="kpi"><div class="value">${formatCurrency(EMPREENDIMENTO.vgvTotal)}</div><div class="label">VGV Total</div></div>
+  <div class="kpi"><div class="value">${formatCurrency(vgvTotal)}</div><div class="label">VGV Total</div></div>
   <div class="kpi"><div class="value">${disponiveis}</div><div class="label">Disponíveis</div></div>
   <div class="kpi"><div class="value">${reservados}</div><div class="label">Reservados</div></div>
   <div class="kpi"><div class="value">${vendidos}</div><div class="label">Vendidos</div></div>
@@ -399,7 +413,7 @@ ${[4, 3, 2, 1].map((andar) => {
       return;
     }
 
-    const unidade = UNIDADES.find((u) => u.id === id);
+    const unidade = UNIDADES_DATA.find((u) => u.id === id);
     const statusLabel = novoStatus === "disponivel" ? "Disponível" : novoStatus === "reservado" ? "Reservado" : "Vendido";
     
     addLog({
@@ -418,7 +432,7 @@ ${[4, 3, 2, 1].map((andar) => {
     if (vendaPendingId) {
       salvarDadosVenda(vendaPendingId, dados);
       
-      const unidade = UNIDADES.find((u) => u.id === vendaPendingId);
+      const unidade = UNIDADES_DATA.find((u) => u.id === vendaPendingId);
       addLog({
         unidade: unidade?.numero || vendaPendingId,
         statusAnterior: unidadesStatus[vendaPendingId],
@@ -504,7 +518,7 @@ ${[4, 3, 2, 1].map((andar) => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-lg">
             <DollarSign size={20} className="text-[#c62828] mb-2" />
-            <p className="text-2xl md:text-3xl font-semibold">{formatCurrency(EMPREENDIMENTO.vgvTotal)}</p>
+            <p className="text-2xl md:text-3xl font-semibold">{formatCurrency(vgvTotal)}</p>
             <p className="text-white/50 text-xs mt-1">VGV Total</p>
           </div>
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-lg">
@@ -514,7 +528,7 @@ ${[4, 3, 2, 1].map((andar) => {
           </div>
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-lg">
             <BarChart3 size={20} className="text-blue-400 mb-2" />
-            <p className="text-2xl md:text-3xl font-semibold">{formatCurrency(EMPREENDIMENTO.ticketMedio)}</p>
+            <p className="text-2xl md:text-3xl font-semibold">{formatCurrency(ticketMedio)}</p>
             <p className="text-white/50 text-xs mt-1">Ticket Médio</p>
           </div>
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-lg">
