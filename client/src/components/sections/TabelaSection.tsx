@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
 import { UNIDADES, EMPREENDIMENTO, CONDICOES_COMERCIAIS, type UnidadeStatus, type Unidade } from "@/data/empreendimento";
+import { trpc } from "@/lib/trpc";
 import { ArrowUpDown, Filter, CheckCircle2, Clock, XCircle, Lock, ShieldCheck, Settings, AlertTriangle } from "lucide-react";
 import { useAuth, type DadosVenda } from "@/contexts/AuthContext";
 import PasswordModal from "@/components/PasswordModal";
@@ -76,9 +77,13 @@ export default function TabelaSection() {
   // Estado sincronizado entre módulos
   const { unidadesStatus, updateStatus } = useUnidadesStatus();
 
+  // Preços dinâmicos via tRPC (fallback para UNIDADES estático)
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 30_000 });
+  const UNIDADES_DATA: Unidade[] = (unidadesQuery.data as Unidade[] | null) ?? UNIDADES;
+
   const unidadesComStatus: Unidade[] = useMemo(
-    () => UNIDADES.map((u) => ({ ...u, status: unidadesStatus[u.id] || u.status })),
-    [unidadesStatus]
+    () => UNIDADES_DATA.map((u) => ({ ...u, status: unidadesStatus[u.id] || u.status })),
+    [unidadesStatus, UNIDADES_DATA]
   );
 
   const filteredUnidades = useMemo(() => {
@@ -103,7 +108,7 @@ export default function TabelaSection() {
 
   const executeStatusChange = useCallback((id: string, forceStatus?: UnidadeStatus) => {
     const newStatus = forceStatus || nextStatus[unidadesStatus[id]];
-    const unidade = UNIDADES.find((u) => u.id === id);
+    const unidade = UNIDADES_DATA.find((u) => u.id === id);
     
     // Registrar no log
     addLog({
@@ -115,7 +120,7 @@ export default function TabelaSection() {
 
     updateStatus(id, newStatus);
     toast.success(`Unidade ${unidade?.numero} alterada para ${statusLabels[newStatus]}`);
-  }, [addLog, unidadesStatus, updateStatus]);
+  }, [addLog, unidadesStatus, updateStatus, UNIDADES_DATA]);
 
   // Estado para menu de contexto ao clicar em reservado
   const [showStatusMenu, setShowStatusMenu] = useState<string | null>(null);
@@ -203,7 +208,7 @@ export default function TabelaSection() {
       salvarDadosVenda(vendaPendingId, dados);
       
       // Registrar no log com detalhes
-      const unidade = UNIDADES.find((u) => u.id === vendaPendingId);
+      const unidade = UNIDADES_DATA.find((u) => u.id === vendaPendingId);
       addLog({
         unidade: unidade?.numero || vendaPendingId,
         statusAnterior: unidadesStatus[vendaPendingId],
