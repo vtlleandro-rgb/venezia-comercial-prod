@@ -6,7 +6,7 @@ export default function HeroSection() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 60_000 });
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
   const valorMinDisplay = unidadesQuery.data
     ? "R$ " + Math.round(Math.min(...(unidadesQuery.data as any[]).map((u: any) => u.valorVenda)) / 1000) + "k"
     : "R$ 375k";
