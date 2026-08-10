@@ -18,7 +18,7 @@ export const EMPREENDIMENTO = {
   vgvComDocumentacao: 4967040,
   ticketMedio: 398000,
   valorMin: 375000,
-  valorMax: 419000,
+  valorMax: 429000,
   areaPrivativaMin: 56.30,
   areaPrivativaMax: 60.85,
   dormitorios: 2,
@@ -93,21 +93,21 @@ export interface Unidade {
 
 export const UNIDADES: Unidade[] = [
   // 1º Andar
-  { id: "101", numero: "101", andar: 1, final: "Final 01", area: 60.85, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 55000, parcela36x: 1486.49, reforcoChaves: 20000, financCEF: 300000, status: "disponivel", precoM2: 6161, observacao: "PNE" },
-  { id: "102", numero: "102", andar: 1, final: "Final 02", area: 56.30, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 55000, parcela36x: 1486.49, reforcoChaves: 20000, financCEF: 300000, status: "disponivel", precoM2: 6663 },
-  { id: "103", numero: "103", andar: 1, final: "Final 03", area: 56.30, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 55000, parcela36x: 1486.49, reforcoChaves: 20000, financCEF: 300000, status: "disponivel", precoM2: 6663 },
+  { id: "101", numero: "101", andar: 1, final: "Final 01", area: 60.85, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 45000, parcela36x: 1216.22, reforcoChaves: 30000, financCEF: 300000, status: "disponivel", precoM2: 6161, observacao: "PNE" },
+  { id: "102", numero: "102", andar: 1, final: "Final 02", area: 56.30, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 45000, parcela36x: 1216.22, reforcoChaves: 30000, financCEF: 300000, status: "disponivel", precoM2: 6663 },
+  { id: "103", numero: "103", andar: 1, final: "Final 03", area: 56.30, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 45000, parcela36x: 1216.22, reforcoChaves: 30000, financCEF: 300000, status: "disponivel", precoM2: 6663 },
   // 2º Andar
-  { id: "201", numero: "201", andar: 2, final: "Final 01", area: 60.85, valorVenda: 389000, valorComDocumentacao: 404560, entrada20: 77800, entradaMenosReforco: 57800, parcela36x: 1562.16, reforcoChaves: 20000, financCEF: 311200, status: "disponivel", precoM2: 6393 },
-  { id: "202", numero: "202", andar: 2, final: "Final 02", area: 56.30, valorVenda: 389000, valorComDocumentacao: 404560, entrada20: 77800, entradaMenosReforco: 57800, parcela36x: 1562.16, reforcoChaves: 20000, financCEF: 311200, status: "disponivel", precoM2: 6911 },
-  { id: "203", numero: "203", andar: 2, final: "Final 03", area: 56.30, valorVenda: 389000, valorComDocumentacao: 404560, entrada20: 77800, entradaMenosReforco: 57800, parcela36x: 1562.16, reforcoChaves: 20000, financCEF: 311200, status: "disponivel", precoM2: 6911 },
+  { id: "201", numero: "201", andar: 2, final: "Final 01", area: 60.85, valorVenda: 409000, valorComDocumentacao: 425360, entrada20: 81800, entradaMenosReforco: 51800, parcela36x: 1400.00, reforcoChaves: 30000, financCEF: 327200, status: "disponivel", precoM2: 6723 },
+  { id: "202", numero: "202", andar: 2, final: "Final 02", area: 56.30, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 45000, parcela36x: 1216.22, reforcoChaves: 30000, financCEF: 300000, status: "disponivel", precoM2: 6663 },
+  { id: "203", numero: "203", andar: 2, final: "Final 03", area: 56.30, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 45000, parcela36x: 1216.22, reforcoChaves: 30000, financCEF: 300000, status: "disponivel", precoM2: 6663 },
   // 3º Andar
-  { id: "301", numero: "301", andar: 3, final: "Final 01", area: 60.85, valorVenda: 409000, valorComDocumentacao: 425360, entrada20: 81800, entradaMenosReforco: 61800, parcela36x: 1670.27, reforcoChaves: 20000, financCEF: 327200, status: "disponivel", precoM2: 6721 },
-  { id: "302", numero: "302", andar: 3, final: "Final 02", area: 56.30, valorVenda: 409000, valorComDocumentacao: 425360, entrada20: 81800, entradaMenosReforco: 61800, parcela36x: 1670.27, reforcoChaves: 20000, financCEF: 327200, status: "disponivel", precoM2: 7266 },
-  { id: "303", numero: "303", andar: 3, final: "Final 03", area: 56.30, valorVenda: 409000, valorComDocumentacao: 425360, entrada20: 81800, entradaMenosReforco: 61800, parcela36x: 1670.27, reforcoChaves: 20000, financCEF: 327200, status: "disponivel", precoM2: 7266 },
+  { id: "301", numero: "301", andar: 3, final: "Final 01", area: 60.85, valorVenda: 419000, valorComDocumentacao: 435760, entrada20: 83800, entradaMenosReforco: 53800, parcela36x: 1454.05, reforcoChaves: 30000, financCEF: 335200, status: "disponivel", precoM2: 6886 },
+  { id: "302", numero: "302", andar: 3, final: "Final 02", area: 56.30, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 45000, parcela36x: 1216.22, reforcoChaves: 30000, financCEF: 300000, status: "disponivel", precoM2: 6663 },
+  { id: "303", numero: "303", andar: 3, final: "Final 03", area: 56.30, valorVenda: 375000, valorComDocumentacao: 390000, entrada20: 75000, entradaMenosReforco: 45000, parcela36x: 1216.22, reforcoChaves: 30000, financCEF: 300000, status: "disponivel", precoM2: 6663 },
   // 4º Andar
-  { id: "401", numero: "401", andar: 4, final: "Final 01", area: 60.85, valorVenda: 419000, valorComDocumentacao: 435760, entrada20: 83800, entradaMenosReforco: 63800, parcela36x: 1724.32, reforcoChaves: 20000, financCEF: 335200, status: "disponivel", precoM2: 6886 },
-  { id: "402", numero: "402", andar: 4, final: "Final 02", area: 56.30, valorVenda: 419000, valorComDocumentacao: 435760, entrada20: 83800, entradaMenosReforco: 63800, parcela36x: 1724.32, reforcoChaves: 20000, financCEF: 335200, status: "disponivel", precoM2: 7442 },
-  { id: "403", numero: "403", andar: 4, final: "Final 03", area: 56.30, valorVenda: 419000, valorComDocumentacao: 435760, entrada20: 83800, entradaMenosReforco: 63800, parcela36x: 1724.32, reforcoChaves: 20000, financCEF: 335200, status: "disponivel", precoM2: 7442 },
+  { id: "401", numero: "401", andar: 4, final: "Final 01", area: 60.85, valorVenda: 429000, valorComDocumentacao: 446160, entrada20: 85800, entradaMenosReforco: 55800, parcela36x: 1508.11, reforcoChaves: 30000, financCEF: 343200, status: "disponivel", precoM2: 7051 },
+  { id: "402", numero: "402", andar: 4, final: "Final 02", area: 56.30, valorVenda: 419000, valorComDocumentacao: 435760, entrada20: 83800, entradaMenosReforco: 53800, parcela36x: 1454.05, reforcoChaves: 30000, financCEF: 335200, status: "disponivel", precoM2: 7442 },
+  { id: "403", numero: "403", andar: 4, final: "Final 03", area: 56.30, valorVenda: 419000, valorComDocumentacao: 435760, entrada20: 83800, entradaMenosReforco: 53800, parcela36x: 1454.05, reforcoChaves: 30000, financCEF: 335200, status: "disponivel", precoM2: 7442 },
 ];
 
 export const AREAS_LAZER = [
@@ -151,8 +151,8 @@ export const IMAGENS = {
 export const CONDICOES_COMERCIAIS = {
   entrada: "20% do valor de venda",
   parcelamento: "Ato + 36 parcelas mensais",
-  reforcos: "R$ 20.000 na entrega das chaves (36 meses)",
-  reforcoTotal: 20000,
+  reforcos: "R$ 30.000 na entrega das chaves (36 meses)",
+  reforcoTotal: 30000,
   financiamento: "80% financiado pelo Programa MCMV — Faixa 3",
   correcao: "Saldo devedor da entrada corrigido pelo INCC-M",
   observacoes: "Valores sujeitos a correção pelo INCC-M durante a obra",
