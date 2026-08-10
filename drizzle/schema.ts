@@ -202,3 +202,15 @@ export const propostasComerciais = mysqlTable("propostas_comerciais", {
 
 export type PropostaComercialRecord = typeof propostasComerciais.$inferSelect;
 export type InsertPropostaComercial = typeof propostasComerciais.$inferInsert;
+
+/**
+ * Configurações chave-valor para dados dinâmicos (preços, tabelas, etc.)
+ */
+export const configuracoes = mysqlTable("configuracoes", {
+  chave: varchar("chave", { length: 100 }).primaryKey(),
+  valor: text("valor").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Configuracao = typeof configuracoes.$inferSelect;
+export type InsertConfiguracao = typeof configuracoes.$inferInsert;
