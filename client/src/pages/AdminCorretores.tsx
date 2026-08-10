@@ -66,6 +66,8 @@ export default function AdminCorretores() {
   });
   const [showImobForm, setShowImobForm] = useState(false);
 
+  const utils = trpc.useUtils();
+
   // tRPC queries - only enabled when authenticated (admin)
   const corretoresQuery = trpc.corretores.list.useQuery(undefined, { enabled: isAuthenticated, retry: false });
   const imobiliariasQuery = trpc.imobiliarias.list.useQuery(undefined, { enabled: isAuthenticated, retry: false });
@@ -76,7 +78,10 @@ export default function AdminCorretores() {
   const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { enabled: isAuthenticated, retry: false });
   const [precosForm, setPrecosForm] = useState<Unidade[]>([...UNIDADES]);
   const setUnidadesMutation = trpc.configuracoes.setUnidades.useMutation({
-    onSuccess: () => toast.success("Tabela de preços salva! Preços atualizados em todo o site."),
+    onSuccess: () => {
+      utils.configuracoes.getUnidades.invalidate();
+      toast.success("Tabela de preços salva! Preços atualizados em todo o site.");
+    },
     onError: (err) => toast.error(err.message),
   });
 
