@@ -304,7 +304,7 @@ export default function DashboardSection() {
   const [vendaPendingId, setVendaPendingId] = useState<string | null>(null);
 
   // Preços dinâmicos via tRPC
-  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 30_000 });
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
   const UNIDADES_DATA: typeof UNIDADES = (unidadesQuery.data as typeof UNIDADES | null) ?? UNIDADES;
 
   const unidades = useMemo(
