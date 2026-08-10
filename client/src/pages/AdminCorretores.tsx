@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { getLoginUrl } from "@/const";
+import { UNIDADES, type Unidade } from "@/data/empreendimento";
 import {
   Users,
   Building2,
@@ -20,6 +21,7 @@ import {
   Copy,
   Check,
   X,
+  DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,9 +37,12 @@ const formatDate = (d: Date | string | null) => {
   });
 };
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 }).format(value);
+
 export default function AdminCorretores() {
   const { isAuthenticated, loading, user } = useAuth({ redirectOnUnauthenticated: true });
-  const [tab, setTab] = useState<"corretores" | "imobiliarias" | "leads" | "analytics">("corretores");
+  const [tab, setTab] = useState<"corretores" | "imobiliarias" | "leads" | "analytics" | "precos">("corretores");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
@@ -66,6 +71,20 @@ export default function AdminCorretores() {
   const imobiliariasQuery = trpc.imobiliarias.list.useQuery(undefined, { enabled: isAuthenticated, retry: false });
   const leadsQuery = trpc.leads.list.useQuery(undefined, { enabled: isAuthenticated, retry: false });
   const statsQuery = trpc.acessos.stats.useQuery(undefined, { enabled: isAuthenticated, retry: false });
+
+  // Preços dinâmicos
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { enabled: isAuthenticated, retry: false });
+  const [precosForm, setPrecosForm] = useState<Unidade[]>([...UNIDADES]);
+  const setUnidadesMutation = trpc.configuracoes.setUnidades.useMutation({
+    onSuccess: () => toast.success("Tabela de preços salva! Preços atualizados em todo o site."),
+    onError: (err) => toast.error(err.message),
+  });
+
+  useEffect(() => {
+    if (unidadesQuery.data) {
+      setPrecosForm(unidadesQuery.data as Unidade[]);
+    }
+  }, [unidadesQuery.data]);
 
   // Mutations
   const createCorretor = trpc.corretores.create.useMutation({
@@ -114,7 +133,7 @@ export default function AdminCorretores() {
     return nome
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[̀-ͯ]/g, "")
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
@@ -259,6 +278,7 @@ export default function AdminCorretores() {
               { key: "imobiliarias", label: "Imobiliárias", icon: Building2 },
               { key: "leads", label: "Leads", icon: UserPlus },
               { key: "analytics", label: "Analytics", icon: BarChart3 },
+              { key: "precos", label: "Preços", icon: DollarSign },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -702,6 +722,103 @@ export default function AdminCorretores() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* === PREÇOS === */}
+        {tab === "precos" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-[#1a1a2e]">Tabela de Preços</h2>
+                <p className="text-sm text-gray-500">
+                  Edite os valores e clique em Salvar. A alteração reflete em todo o site imediatamente.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPrecosForm([...UNIDADES])}
+                  className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Restaurar Padrão
+                </button>
+                <button
+                  onClick={() => setUnidadesMutation.mutate(precosForm)}
+                  disabled={setUnidadesMutation.isPending}
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-[#c62828] rounded-lg hover:bg-[#b71c1c] transition-colors disabled:opacity-50"
+                >
+                  <Check size={15} />
+                  {setUnidadesMutation.isPending ? "Salvando..." : "Salvar Tabela"}
+                </button>
+              </div>
+            </div>
+
+            {unidadesQuery.isLoading ? (
+              <div className="text-center py-12 text-gray-400">Carregando preços...</div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#1a1a2e] text-white">
+                      <tr>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Unidade</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Andar</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Área (m²)</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Valor Venda</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">c/ Doc (4%)</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Entrada 20%</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Ent. - Reforço</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Parcela 36x</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Reforço Chaves</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">Financ. CEF</th>
+                        <th className="px-3 py-3 text-left font-medium whitespace-nowrap">R$/m²</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {precosForm.map((u, idx) => (
+                        <tr key={u.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}>
+                          <td className="px-3 py-2 font-medium text-[#1a1a2e]">{u.numero}</td>
+                          <td className="px-3 py-2 text-gray-600">{u.andar}º</td>
+                          <td className="px-3 py-2 text-gray-600">{u.area.toFixed(2).replace('.', ',')}</td>
+                          {(["valorVenda", "valorComDocumentacao", "entrada20", "entradaMenosReforco", "parcela36x", "reforcoChaves", "financCEF", "precoM2"] as const).map((field) => (
+                            <td key={field} className="px-2 py-1.5">
+                              <input
+                                type="number"
+                                value={u[field]}
+                                step={field === "parcela36x" ? "0.01" : "1000"}
+                                onChange={(e) => {
+                                  const updated = [...precosForm];
+                                  updated[idx] = { ...updated[idx], [field]: Number(e.target.value) };
+                                  setPrecosForm(updated);
+                                }}
+                                className="w-28 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#c62828]/40 focus:border-[#c62828] bg-white"
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-[#f8f7f4] border-t-2 border-[#1a1a2e]/10">
+                      <tr>
+                        <td colSpan={3} className="px-3 py-2 font-semibold text-[#1a1a2e] text-xs">TOTAL</td>
+                        <td className="px-2 py-2 text-xs font-semibold text-[#1a1a2e]">
+                          {formatCurrency(precosForm.reduce((s, u) => s + u.valorVenda, 0))}
+                        </td>
+                        <td className="px-2 py-2 text-xs font-semibold text-[#1a1a2e]">
+                          {formatCurrency(precosForm.reduce((s, u) => s + u.valorComDocumentacao, 0))}
+                        </td>
+                        <td colSpan={6} />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div className="p-4 bg-blue-50 border-t border-blue-100">
+                  <p className="text-xs text-blue-700">
+                    <strong>Dica:</strong> Após salvar, todos os valores do site (Hero, Tabela, Simulador, Dashboard, VGV) serão atualizados automaticamente. Os valores ficam salvos no banco de dados.
+                  </p>
+                </div>
               </div>
             )}
           </div>
