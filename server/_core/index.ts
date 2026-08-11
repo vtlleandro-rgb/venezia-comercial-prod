@@ -156,10 +156,6 @@ async function startServer() {
     serveStatic(app);
   }
 
-  // Auto-create configuracoes table if not exists
-  const { ensureConfiguracoesTable } = await import("../db");
-  await ensureConfiguracoesTable();
-
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
 

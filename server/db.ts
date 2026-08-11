@@ -13,7 +13,6 @@ import {
   logsComerciais,
   cancelamentosReservas,
   propostasComerciais,
-  configuracoes,
   InsertCorretor,
   InsertImobiliaria,
   InsertLead,
@@ -350,49 +349,4 @@ export async function salvarPropostaComercial(data: InsertPropostaComercial) {
   if (!db) throw new Error("Database not available");
   await db.insert(propostasComerciais).values(data);
   return data;
-}
-
-// ─── Configurações (preços dinâmicos) ────────────────────────────────────────
-
-export async function ensureConfiguracoesTable() {
-  if (!process.env.DATABASE_URL) return;
-  try {
-    const mysql = await import("mysql2/promise");
-    const conn = await mysql.createConnection(process.env.DATABASE_URL);
-    await conn.execute(`
-      CREATE TABLE IF NOT EXISTS configuracoes (
-        chave VARCHAR(100) NOT NULL,
-        valor LONGTEXT NOT NULL,
-        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
-        PRIMARY KEY (chave)
-      )
-    `);
-    await conn.end();
-  } catch (err) {
-    console.warn("[Database] ensureConfiguracoesTable:", err);
-  }
-}
-
-export async function getConfiguracao(chave: string): Promise<string | null> {
-  const db = await getDb();
-  if (!db) return null;
-  try {
-    const result = await db
-      .select()
-      .from(configuracoes)
-      .where(eq(configuracoes.chave, chave))
-      .limit(1);
-    return result[0]?.valor ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function setConfiguracao(chave: string, valor: string): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db
-    .insert(configuracoes)
-    .values({ chave, valor })
-    .onDuplicateKeyUpdate({ set: { valor } });
 }
