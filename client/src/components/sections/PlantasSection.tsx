@@ -26,37 +26,37 @@ const PLANTAS: PlantaItem[] = [
     id: "implantacao-terreo",
     titulo: "Implantação — Pavimento Térreo / Garagens",
     descricao: "12 vagas de garagem, bicicletário, espaço pet, circulação, acesso de pedestres e acesso veicular.",
-    imagem: "/assets/venezia/planta-comercial-venezia.png",
+    imagem: "/assets/venezia/planta-72.jpg",
   },
   {
     id: "pavimento-tipo",
     titulo: "Pavimento Tipo",
     descricao: "Planta do pavimento tipo com 3 unidades por andar: Final 01 (60,85m²), Final 02 (56,30m²) e Final 03 (56,30m²).",
-    imagem: "/assets/venezia/planta-comercial-venezia.png",
+    imagem: "/assets/venezia/planta-70.jpg",
   },
   {
     id: "implantacao-rooftop",
     titulo: "Implantação — Pavimento Rooftop",
     descricao: "Espaço gourmet, academia, espaço kids, terraço descoberto, sacadas e WC PCD.",
-    imagem: "/assets/venezia/planta-comercial-venezia.png",
+    imagem: "/assets/venezia/planta-71.jpg",
   },
   {
     id: "tipologia-final-01",
     titulo: "Tipologia Final 01",
     descricao: "Apartamento com 60,85m² — 2 suítes, living integrado, cozinha americana, sacada com churrasqueira e 1 vaga.",
-    imagem: "/assets/venezia/planta-comercial-venezia.png",
+    imagem: "/assets/venezia/planta-67.jpg",
   },
   {
     id: "tipologia-final-02",
     titulo: "Tipologia Final 02",
     descricao: "Apartamento com 56,30m² — 2 suítes, living integrado, cozinha americana, sacada com churrasqueira e 1 vaga.",
-    imagem: "/assets/venezia/planta-comercial-venezia.png",
+    imagem: "/assets/venezia/planta-68.jpg",
   },
   {
     id: "tipologia-final-03",
     titulo: "Tipologia Final 03",
     descricao: "Apartamento com 56,30m² — 2 suítes, planta espelhada do Final 02, sacada com churrasqueira e 1 vaga.",
-    imagem: "/assets/venezia/planta-comercial-venezia.png",
+    imagem: "/assets/venezia/planta-69.jpg",
   },
 ];
 

@@ -1,6 +1,7 @@
 /*
  * GALERIA DO EMPREENDIMENTO — RESIDENCIAL VENEZIA
- * Assets reais disponíveis no projeto, sem duplicar imagens com legendas falsas.
+ * 12 categorias conforme documento de catalogação oficial
+ * 55 imagens totais, mapeadas por página do PDF
  */
 
 import { useState } from "react";
@@ -21,38 +22,118 @@ interface GaleriaCategory {
 
 const GALERIA: GaleriaCategory[] = [
   {
-    id: "fachada",
-    titulo: "Fachada",
+    id: "fachadas-diurnas",
+    titulo: "Fachadas Diurnas",
     imagens: [
-      { id: "FACHADA-01", src: "/assets/venezia/fachada-venezia-oficial.jpg", alt: "Fachada oficial do Residencial Venezia" },
-      { id: "FACHADA-02", src: "/assets/venezia/hero-fachada-real.jpg", alt: "Perspectiva renderizada da fachada do Residencial Venezia" },
+      { id: "IMG-01", src: "/assets/venezia/img-05.jpg", alt: "Fachada frontal do edifício (render 3D)" },
+      { id: "IMG-02", src: "/assets/venezia/img-06.jpg", alt: "Fachada lateral/posterior (ângulo lateral esquerdo)" },
+      { id: "IMG-03", src: "/assets/venezia/img-07.jpg", alt: "Fachada frontal (vista da rua com carros)" },
+      { id: "IMG-04", src: "/assets/venezia/img-08.jpg", alt: "Fachada frontal (vista da rua, ângulo alternativo)" },
+      { id: "IMG-05", src: "/assets/venezia/img-09.jpg", alt: "Fachada frontal (vista centralizada com carros)" },
+      { id: "IMG-06", src: "/assets/venezia/img-10.jpg", alt: "Fachada frontal (ângulo lateral direito, foco na entrada)" },
+      { id: "IMG-07", src: "/assets/venezia/img-11.jpg", alt: "Detalhe da entrada/portaria (close na guarita e portão)" },
+      { id: "IMG-08", src: "/assets/venezia/img-12.jpg", alt: "Fachada frontal (vista com portão basculante)" },
+      { id: "IMG-09", src: "/assets/venezia/img-13.jpg", alt: "Fachada lateral/fundos (ângulo lateral esquerdo com sacadas)" },
+      { id: "IMG-10", src: "/assets/venezia/img-14.jpg", alt: "Fachada lateral/fundos (ângulo oposto com acesso à garagem)" },
+      { id: "IMG-11", src: "/assets/venezia/img-15.jpg", alt: "Vista aérea/perspectiva superior (vista elevada frontal)" },
+      { id: "IMG-12", src: "/assets/venezia/img-16.jpg", alt: "Vista aérea posterior (fundos com estacionamento térreo)" },
+      { id: "IMG-13", src: "/assets/venezia/img-17.jpg", alt: "Vista aérea posterior (foco na área técnica)" },
+      { id: "IMG-14", src: "/assets/venezia/img-18.jpg", alt: "Vista aérea lateral (ângulo lateral com sacadas)" },
     ],
   },
   {
-    id: "localizacao",
-    titulo: "Localização",
+    id: "noturnas",
+    titulo: "Imagens Noturnas",
     imagens: [
-      { id: "LOCAL-01", src: "/assets/venezia/localizacao-venezia-oficial.jpg", alt: "Mapa oficial de localização do Residencial Venezia" },
-      { id: "LOCAL-02", src: "/assets/venezia/venezia-location.jpg", alt: "Imagem de apoio da localização e entorno" },
+      { id: "IMG-15", src: "/assets/venezia/img-20.jpg", alt: "Fachada frontal noturna (entardecer/céu nublado)" },
+      { id: "IMG-16", src: "/assets/venezia/img-21.jpg", alt: "Fachada frontal noturna (vista centralizada com iluminação)" },
+      { id: "IMG-17", src: "/assets/venezia/img-22.jpg", alt: "Fachada frontal noturna (ângulo lateral com iluminação)" },
     ],
   },
   {
-    id: "plantas",
-    titulo: "Plantas e Áreas",
+    id: "living-tipo1",
+    titulo: "Living — Apto Tipo 1",
     imagens: [
-      { id: "PLANTA-01", src: "/assets/venezia/planta-comercial-venezia.png", alt: "Implantação comercial do Residencial Venezia" },
-      { id: "PLANTA-02", src: "/assets/venezia/planta-tipo-venezia.jpeg", alt: "Planta tipo do apartamento Venezia" },
-      { id: "AREAS-01", src: "/assets/venezia/quadro-areas-venezia.jpeg", alt: "Quadro oficial de áreas privativas das unidades" },
+      { id: "IMG-18", src: "/assets/venezia/img-24.jpg", alt: "Living/sala integrada com cozinha (sofá, TV, mesa de jantar)" },
+      { id: "IMG-19", src: "/assets/venezia/img-25.jpg", alt: "Cozinha/jantar (mesa de jantar em madeira, cozinha planejada)" },
+      { id: "IMG-20", src: "/assets/venezia/img-26.jpg", alt: "Cozinha (bancada, geladeira, fogão)" },
+      { id: "IMG-21", src: "/assets/venezia/img-27.jpg", alt: "Cozinha/jantar (vista da pia para mesa de jantar)" },
+      { id: "IMG-22", src: "/assets/venezia/img-28.jpg", alt: "Área de serviço/lavanderia com sacada" },
     ],
   },
   {
-    id: "identidade",
-    titulo: "Identidade",
+    id: "living-tipo23",
+    titulo: "Living — Apto Tipo 2 e 3",
     imagens: [
-      { id: "LOGO-01", src: "/assets/venezia/logo-venezia-oficial.png", alt: "Logo oficial do Residencial Venezia" },
-      { id: "LOGO-02", src: "/assets/venezia/logo-blue-real-estate.jpeg", alt: "Logo Blue Real Estate" },
-      { id: "LOGO-03", src: "/assets/venezia/logo-rb-construtora.jpeg", alt: "Logo RB Construtora" },
-      { id: "LOGO-04", src: "/assets/venezia/logo-artea.png", alt: "Logo Artea" },
+      { id: "IMG-23", src: "/assets/venezia/img-30.jpg", alt: "Living/sala integrada (painel ripado, TV, sofá branco)" },
+      { id: "IMG-24", src: "/assets/venezia/img-31.jpg", alt: "Living/sala integrada (ângulo oposto, sacada ao fundo)" },
+      { id: "IMG-25", src: "/assets/venezia/img-32.jpg", alt: "Cozinha (fogão, bancada, máquina de lavar)" },
+      { id: "IMG-26", src: "/assets/venezia/img-33.jpg", alt: "Cozinha (geladeira preta, mesa de jantar)" },
+      { id: "IMG-27", src: "/assets/venezia/img-34.jpg", alt: "Cozinha/área de serviço (pia, máquina de lavar, sacada)" },
+    ],
+  },
+  {
+    id: "suite-casal",
+    titulo: "Suíte Casal",
+    imagens: [
+      { id: "IMG-28", src: "/assets/venezia/img-36.jpg", alt: "Suíte casal (cama, armário porta de vidro, painel ripado escuro)" },
+      { id: "IMG-29", src: "/assets/venezia/img-37.jpg", alt: "Suíte casal (ângulo oposto com TV, porta do banheiro)" },
+      { id: "IMG-30", src: "/assets/venezia/img-38.jpg", alt: "Suíte casal (vista frontal, quadro decorativo, armário vidro)" },
+      { id: "IMG-31", src: "/assets/venezia/img-40.jpg", alt: "Suíte casal Tipo 2/3 (armário madeira, painel ripado, quadro)" },
+      { id: "IMG-32", src: "/assets/venezia/img-41.jpg", alt: "Suíte casal Tipo 2/3 (ângulo oposto, espelho, TV, quadro)" },
+      { id: "IMG-33", src: "/assets/venezia/img-42.jpg", alt: "Suíte casal Tipo 2/3 (painel ripado, TV, armário madeira)" },
+    ],
+  },
+  {
+    id: "suite-solteiro",
+    titulo: "Suíte Solteiro",
+    imagens: [
+      { id: "IMG-34", src: "/assets/venezia/img-44.jpg", alt: "Suíte solteiro (cama, TV, ar-condicionado, acesso ao banheiro)" },
+    ],
+  },
+  {
+    id: "espaco-gourmet",
+    titulo: "Espaço Gourmet",
+    imagens: [
+      { id: "IMG-35", src: "/assets/venezia/img-46.jpg", alt: "Espaço Gourmet (mesa grande, cozinha ao fundo, quadros)" },
+      { id: "IMG-36", src: "/assets/venezia/img-47.jpg", alt: "Espaço Gourmet (ilha com banquetas, geladeira, sacada)" },
+      { id: "IMG-37", src: "/assets/venezia/img-48.jpg", alt: "Espaço Gourmet (bancada com fogão, banquetas, área externa)" },
+      { id: "IMG-38", src: "/assets/venezia/img-49.jpg", alt: "Espaço Gourmet (churrasqueira, mesa grande, bancada)" },
+    ],
+  },
+  {
+    id: "academia",
+    titulo: "Academia",
+    imagens: [
+      { id: "IMG-39", src: "/assets/venezia/img-51.jpg", alt: "Academia (saco de pancada, esteira, bicicleta, neon Fitness)" },
+      { id: "IMG-40", src: "/assets/venezia/img-52.jpg", alt: "Academia (halteres, esteira, saco de pancada, neon)" },
+      { id: "IMG-41", src: "/assets/venezia/img-53.jpg", alt: "Academia (saco de pancada, luvas, banco, espelho)" },
+    ],
+  },
+  {
+    id: "brinquedoteca",
+    titulo: "Brinquedoteca",
+    imagens: [
+      { id: "IMG-42", src: "/assets/venezia/img-55.jpg", alt: "Brinquedoteca (parede azul, árvore decorativa, mesinha infantil)" },
+      { id: "IMG-43", src: "/assets/venezia/img-56.jpg", alt: "Brinquedoteca (TV, caixas coloridas, prateleiras com brinquedos)" },
+    ],
+  },
+  {
+    id: "terraco-rooftop",
+    titulo: "Terraço (Rooftop)",
+    imagens: [
+      { id: "IMG-44", src: "/assets/venezia/img-58.jpg", alt: "Terraço/Rooftop (vista aérea com pérgola, mesa, playground)" },
+      { id: "IMG-45", src: "/assets/venezia/img-59.jpg", alt: "Terraço/Rooftop (vista frontal com pérgola, mesa, plantas)" },
+      { id: "IMG-46", src: "/assets/venezia/img-60.jpg", alt: "Terraço/Rooftop (vista lateral com sofá, mesa, pérgola)" },
+      { id: "IMG-47", src: "/assets/venezia/img-61.jpg", alt: "Terraço/Rooftop (mesa redonda, sofá, cadeiras, plantas)" },
+    ],
+  },
+  {
+    id: "pet-bicicletario",
+    titulo: "Pet Place e Bicicletário",
+    imagens: [
+      { id: "IMG-48", src: "/assets/venezia/img-63.jpg", alt: "Espaço Pet (área com portão, grama, circuito pet)" },
+      { id: "IMG-49", src: "/assets/venezia/img-65.jpg", alt: "Bicicletário (garagem com suportes de parede para bicicletas)" },
     ],
   },
 ];
