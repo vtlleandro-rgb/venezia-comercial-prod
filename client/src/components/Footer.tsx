@@ -215,7 +215,7 @@ export default function Footer({ corretor }: FooterProps) {
           {/* Brand */}
           <div>
             <img
-              src={IMAGENS.logoVeneziaOficial}
+              src="/assets/venezia/logo-venezia-real-original.jpeg"
               alt="Residencial Venezia"
               className="h-14 w-auto mb-4 rounded"
             />
@@ -251,7 +251,7 @@ export default function Footer({ corretor }: FooterProps) {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/30 text-xs">
-            © 2025 SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA. Todos os direitos reservados.
+            © 2026 SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA. Todos os direitos reservados.
           </p>
           <p className="text-white/30 text-xs">
             Imagens meramente ilustrativas. Valores sujeitos a alteração.
