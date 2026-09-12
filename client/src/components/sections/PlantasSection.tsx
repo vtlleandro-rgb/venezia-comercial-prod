@@ -58,6 +58,54 @@ const PLANTAS: PlantaItem[] = [
     descricao: "Apartamento com 56,30m² — 2 suítes, planta espelhada do Final 02, sacada com churrasqueira e 1 vaga.",
     imagem: "/assets/venezia/planta-69.jpg",
   },
+  {
+    id: "humanizada-apto1",
+    titulo: "Humanizada — Apto 1",
+    descricao: "Planta humanizada do Apartamento Tipo 1 com mobiliário ilustrativo e layout de ambientes.",
+    imagem: "/assets/venezia/planta-73.jpg",
+  },
+  {
+    id: "humanizada-apto2",
+    titulo: "Humanizada — Apto 2",
+    descricao: "Planta humanizada do Apartamento Tipo 2 com mobiliário ilustrativo e layout de ambientes.",
+    imagem: "/assets/venezia/planta-74.jpg",
+  },
+  {
+    id: "humanizada-apto3",
+    titulo: "Humanizada — Apto 3",
+    descricao: "Planta humanizada do Apartamento Tipo 3 com mobiliário ilustrativo e layout de ambientes.",
+    imagem: "/assets/venezia/planta-75.jpg",
+  },
+  {
+    id: "humanizada-terreo",
+    titulo: "Humanizada — Pavimento Térreo",
+    descricao: "Planta humanizada do pavimento térreo com indicação de vagas, circulação e áreas comuns.",
+    imagem: "/assets/venezia/planta-76.jpg",
+  },
+  {
+    id: "humanizada-tipo",
+    titulo: "Humanizada — Pavimento Tipo",
+    descricao: "Planta humanizada do pavimento tipo com as três unidades por andar e circulação.",
+    imagem: "/assets/venezia/planta-77.jpg",
+  },
+  {
+    id: "humanizada-rooftop",
+    titulo: "Humanizada — Rooftop",
+    descricao: "Planta humanizada do pavimento rooftop com espaço gourmet, academia e terraço.",
+    imagem: "/assets/venezia/planta-78.jpg",
+  },
+  {
+    id: "humanizada-petplace",
+    titulo: "Humanizada — Pet Place",
+    descricao: "Planta humanizada do espaço pet com circuito, grama e área de descanso para animais.",
+    imagem: "/assets/venezia/planta-79.jpg",
+  },
+  {
+    id: "humanizada-bicicletario",
+    titulo: "Humanizada — Bicicletário",
+    descricao: "Planta humanizada do bicicletário com suportes, circulação e organização do espaço.",
+    imagem: "/assets/venezia/planta-80.jpg",
+  },
 ];
 
 export default function PlantasSection() {

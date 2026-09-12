@@ -1,12 +1,11 @@
 /*
  * GALERIA DO EMPREENDIMENTO — RESIDENCIAL VENEZIA
- * 12 categorias conforme documento de catalogação oficial
- * 55 imagens totais, mapeadas por página do PDF
+ * 13 categorias | 85 imagens + 1 vídeo
  */
 
 import { useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ZoomIn, Play } from "lucide-react";
 
 interface GaleriaImage {
   id: string;
@@ -18,9 +17,16 @@ interface GaleriaCategory {
   id: string;
   titulo: string;
   imagens: GaleriaImage[];
+  video?: string;
 }
 
 const GALERIA: GaleriaCategory[] = [
+  {
+    id: "video",
+    titulo: "Vídeo de Apresentação",
+    imagens: [],
+    video: "/assets/venezia/venezia-apresentacao.mp4",
+  },
   {
     id: "fachadas-diurnas",
     titulo: "Fachadas Diurnas",
@@ -39,6 +45,10 @@ const GALERIA: GaleriaCategory[] = [
       { id: "IMG-12", src: "/assets/venezia/img-16.jpg", alt: "Vista aérea posterior (fundos com estacionamento térreo)" },
       { id: "IMG-13", src: "/assets/venezia/img-17.jpg", alt: "Vista aérea posterior (foco na área técnica)" },
       { id: "IMG-14", src: "/assets/venezia/img-18.jpg", alt: "Vista aérea lateral (ângulo lateral com sacadas)" },
+      { id: "IMG-66", src: "/assets/venezia/img-66.jpg", alt: "Fachada frontal diurna (render finalizado)" },
+      { id: "IMG-67", src: "/assets/venezia/img-67.jpg", alt: "Fachada lateral diurna (render finalizado)" },
+      { id: "IMG-68", src: "/assets/venezia/img-68.jpg", alt: "Fachada 02 (render finalizado)" },
+      { id: "IMG-69", src: "/assets/venezia/img-69.jpg", alt: "Fachada 03 (render finalizado)" },
     ],
   },
   {
@@ -48,6 +58,8 @@ const GALERIA: GaleriaCategory[] = [
       { id: "IMG-15", src: "/assets/venezia/img-20.jpg", alt: "Fachada frontal noturna (entardecer/céu nublado)" },
       { id: "IMG-16", src: "/assets/venezia/img-21.jpg", alt: "Fachada frontal noturna (vista centralizada com iluminação)" },
       { id: "IMG-17", src: "/assets/venezia/img-22.jpg", alt: "Fachada frontal noturna (ângulo lateral com iluminação)" },
+      { id: "IMG-70", src: "/assets/venezia/img-70.jpg", alt: "Fachada 01 noturna (render finalizado)" },
+      { id: "IMG-71", src: "/assets/venezia/img-71.jpg", alt: "Fachada 04 noturna (render finalizado)" },
     ],
   },
   {
@@ -59,6 +71,10 @@ const GALERIA: GaleriaCategory[] = [
       { id: "IMG-20", src: "/assets/venezia/img-26.jpg", alt: "Cozinha (bancada, geladeira, fogão)" },
       { id: "IMG-21", src: "/assets/venezia/img-27.jpg", alt: "Cozinha/jantar (vista da pia para mesa de jantar)" },
       { id: "IMG-22", src: "/assets/venezia/img-28.jpg", alt: "Área de serviço/lavanderia com sacada" },
+      { id: "IMG-72", src: "/assets/venezia/img-72.jpg", alt: "Living Apto Tipo 1 — render finalizado (ângulo 1)" },
+      { id: "IMG-73", src: "/assets/venezia/img-73.jpg", alt: "Living Apto Tipo 1 — render finalizado (ângulo 2)" },
+      { id: "IMG-74", src: "/assets/venezia/img-74.jpg", alt: "Living Apto Tipo 1 — render finalizado (ângulo 3)" },
+      { id: "IMG-75", src: "/assets/venezia/img-75.jpg", alt: "Living Apto Tipo 1 — render finalizado (ângulo 4)" },
     ],
   },
   {
@@ -70,6 +86,10 @@ const GALERIA: GaleriaCategory[] = [
       { id: "IMG-25", src: "/assets/venezia/img-32.jpg", alt: "Cozinha (fogão, bancada, máquina de lavar)" },
       { id: "IMG-26", src: "/assets/venezia/img-33.jpg", alt: "Cozinha (geladeira preta, mesa de jantar)" },
       { id: "IMG-27", src: "/assets/venezia/img-34.jpg", alt: "Cozinha/área de serviço (pia, máquina de lavar, sacada)" },
+      { id: "IMG-76", src: "/assets/venezia/img-76.jpg", alt: "Living Apto Tipo 2/3 — render finalizado (ângulo 1)" },
+      { id: "IMG-77", src: "/assets/venezia/img-77.jpg", alt: "Living Apto Tipo 2/3 — render finalizado (ângulo 2)" },
+      { id: "IMG-78", src: "/assets/venezia/img-78.jpg", alt: "Living Apto Tipo 2/3 — render finalizado (ângulo 3)" },
+      { id: "IMG-79", src: "/assets/venezia/img-79.jpg", alt: "Living Apto Tipo 2/3 — render finalizado (ângulo 4)" },
     ],
   },
   {
@@ -82,6 +102,10 @@ const GALERIA: GaleriaCategory[] = [
       { id: "IMG-31", src: "/assets/venezia/img-40.jpg", alt: "Suíte casal Tipo 2/3 (armário madeira, painel ripado, quadro)" },
       { id: "IMG-32", src: "/assets/venezia/img-41.jpg", alt: "Suíte casal Tipo 2/3 (ângulo oposto, espelho, TV, quadro)" },
       { id: "IMG-33", src: "/assets/venezia/img-42.jpg", alt: "Suíte casal Tipo 2/3 (painel ripado, TV, armário madeira)" },
+      { id: "IMG-80", src: "/assets/venezia/img-80.jpg", alt: "Quarto casal Apto Tipo 1 — render finalizado (ângulo B1)" },
+      { id: "IMG-81", src: "/assets/venezia/img-81.jpg", alt: "Quarto casal Apto Tipo 1 — render finalizado (ângulo B2)" },
+      { id: "IMG-82", src: "/assets/venezia/img-82.jpg", alt: "Quarto casal Apto Tipo 2/3 — render finalizado (ângulo A1)" },
+      { id: "IMG-83", src: "/assets/venezia/img-83.jpg", alt: "Quarto casal Apto Tipo 2/3 — render finalizado (ângulo A2)" },
     ],
   },
   {
@@ -89,6 +113,8 @@ const GALERIA: GaleriaCategory[] = [
     titulo: "Suíte Solteiro",
     imagens: [
       { id: "IMG-34", src: "/assets/venezia/img-44.jpg", alt: "Suíte solteiro (cama, TV, ar-condicionado, acesso ao banheiro)" },
+      { id: "IMG-84", src: "/assets/venezia/img-84.jpg", alt: "Quarto solteiro Apto Tipo 1 — render finalizado (ângulo 1)" },
+      { id: "IMG-85", src: "/assets/venezia/img-85.jpg", alt: "Quarto solteiro Apto Tipo 1 — render finalizado (ângulo 2)" },
     ],
   },
   {
@@ -99,6 +125,10 @@ const GALERIA: GaleriaCategory[] = [
       { id: "IMG-36", src: "/assets/venezia/img-47.jpg", alt: "Espaço Gourmet (ilha com banquetas, geladeira, sacada)" },
       { id: "IMG-37", src: "/assets/venezia/img-48.jpg", alt: "Espaço Gourmet (bancada com fogão, banquetas, área externa)" },
       { id: "IMG-38", src: "/assets/venezia/img-49.jpg", alt: "Espaço Gourmet (churrasqueira, mesa grande, bancada)" },
+      { id: "IMG-92", src: "/assets/venezia/img-92.jpg", alt: "Espaço Gourmet — render finalizado (ângulo 1)" },
+      { id: "IMG-93", src: "/assets/venezia/img-93.jpg", alt: "Espaço Gourmet — render finalizado (ângulo 2)" },
+      { id: "IMG-94", src: "/assets/venezia/img-94.jpg", alt: "Espaço Gourmet — render finalizado (ângulo 3)" },
+      { id: "IMG-95", src: "/assets/venezia/img-95.jpg", alt: "Espaço Gourmet — render finalizado (ângulo 4)" },
     ],
   },
   {
@@ -108,6 +138,9 @@ const GALERIA: GaleriaCategory[] = [
       { id: "IMG-39", src: "/assets/venezia/img-51.jpg", alt: "Academia (saco de pancada, esteira, bicicleta, neon Fitness)" },
       { id: "IMG-40", src: "/assets/venezia/img-52.jpg", alt: "Academia (halteres, esteira, saco de pancada, neon)" },
       { id: "IMG-41", src: "/assets/venezia/img-53.jpg", alt: "Academia (saco de pancada, luvas, banco, espelho)" },
+      { id: "IMG-86", src: "/assets/venezia/img-86.jpg", alt: "Academia — render finalizado (ângulo 1)" },
+      { id: "IMG-87", src: "/assets/venezia/img-87.jpg", alt: "Academia — render finalizado (ângulo 2)" },
+      { id: "IMG-88", src: "/assets/venezia/img-88.jpg", alt: "Academia — render finalizado (ângulo 3)" },
     ],
   },
   {
@@ -116,6 +149,9 @@ const GALERIA: GaleriaCategory[] = [
     imagens: [
       { id: "IMG-42", src: "/assets/venezia/img-55.jpg", alt: "Brinquedoteca (parede azul, árvore decorativa, mesinha infantil)" },
       { id: "IMG-43", src: "/assets/venezia/img-56.jpg", alt: "Brinquedoteca (TV, caixas coloridas, prateleiras com brinquedos)" },
+      { id: "IMG-89", src: "/assets/venezia/img-89.jpg", alt: "Brinquedoteca — render finalizado (ângulo 1)" },
+      { id: "IMG-90", src: "/assets/venezia/img-90.jpg", alt: "Brinquedoteca — render finalizado (ângulo 2)" },
+      { id: "IMG-91", src: "/assets/venezia/img-91.jpg", alt: "Brinquedoteca — render finalizado (ângulo 3)" },
     ],
   },
   {
@@ -188,43 +224,58 @@ export default function GaleriaSection() {
                 }`}
               >
                 {cat.titulo}
-                <span className="ml-1 opacity-60">({cat.imagens.length})</span>
+                {cat.video
+                  ? <span className="ml-1 opacity-60"><Play size={10} className="inline" /></span>
+                  : <span className="ml-1 opacity-60">({cat.imagens.length})</span>
+                }
               </button>
             ))}
           </div>
         </div>
 
-        {/* Image Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {imagens.map((img, idx) => (
-            <div
-              key={img.id}
-              onClick={() => openLightbox(idx)}
-              className="group relative overflow-hidden rounded-lg cursor-pointer bg-gray-100"
-            >
-              <img
-                src={img.src}
-                alt={img.alt}
-                className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
-                <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={28} />
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <p className="text-white text-[11px] font-medium">{img.id}</p>
-                <p className="text-white/80 text-[10px]">{img.alt}</p>
-              </div>
+        {/* Video Player or Image Grid */}
+        {categoriaAtual.video ? (
+          <div className="flex flex-col items-center">
+            <video
+              src={categoriaAtual.video}
+              controls
+              className="w-full max-w-4xl rounded-lg shadow-lg"
+              poster=""
+            />
+            <p className="text-gray-400 text-xs mt-4">{categoriaAtual.titulo}</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {imagens.map((img, idx) => (
+                <div
+                  key={img.id}
+                  onClick={() => openLightbox(idx)}
+                  className="group relative overflow-hidden rounded-lg cursor-pointer bg-gray-100"
+                >
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                    <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={28} />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <p className="text-white text-[11px] font-medium">{img.id}</p>
+                    <p className="text-white/80 text-[10px]">{img.alt}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* Counter */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-400 text-xs">
-            {categoriaAtual.titulo} — {imagens.length} {imagens.length === 1 ? "imagem" : "imagens"}
-          </p>
-        </div>
+            <div className="mt-6 text-center">
+              <p className="text-gray-400 text-xs">
+                {categoriaAtual.titulo} — {imagens.length} {imagens.length === 1 ? "imagem" : "imagens"}
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Lightbox */}
