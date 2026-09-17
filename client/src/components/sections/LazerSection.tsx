@@ -41,6 +41,7 @@ export default function LazerSection() {
             src="/assets/venezia/venezia-lifestyle.jpg"
             alt="Rooftop Residencial Venezia"
             className="w-full h-[300px] md:h-[400px] object-cover"
+            loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-6 left-6 right-6">
@@ -66,6 +67,7 @@ export default function LazerSection() {
                   src={item.img}
                   alt={item.nome}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
