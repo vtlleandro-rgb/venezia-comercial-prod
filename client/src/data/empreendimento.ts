@@ -83,6 +83,25 @@ export interface Unidade {
   observacao?: string;
 }
 
+// Custo de documentação aplicado sobre o valor de venda.
+export const PERCENTUAL_DOCUMENTACAO = 0.04;
+
+// Valor com documentação é sempre derivado do valor de venda — nunca
+// armazenado de forma independente, senão os dois divergem quando os
+// preços são alterados pelo painel admin.
+export function calcularValorComDocumentacao(valorVenda: number): number {
+  return Math.round(valorVenda * (1 + PERCENTUAL_DOCUMENTACAO));
+}
+
+// Recalcula valorComDocumentacao de uma lista de unidades, venha ela do
+// banco (painel admin) ou do fallback estático abaixo.
+export function normalizarUnidades(unidades: Unidade[]): Unidade[] {
+  return unidades.map((u) => ({
+    ...u,
+    valorComDocumentacao: calcularValorComDocumentacao(u.valorVenda),
+  }));
+}
+
 // Tabela oficial de vendas (conforme planilha v1):
 // Entrada = 20% do VALOR VENDA
 // Reforço = R$ 20.000 na entrega das chaves (36 meses)

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { UNIDADES, EMPREENDIMENTO, type Unidade, type UnidadeStatus } from "@/data/empreendimento";
+import { UNIDADES, EMPREENDIMENTO, normalizarUnidades, type Unidade, type UnidadeStatus } from "@/data/empreendimento";
 import { trpc } from "@/lib/trpc";
 import { BarChart3, TrendingUp, Target, DollarSign, Check, Lock, ShieldCheck, PieChart, Printer } from "lucide-react";
 import { useAuth, type DadosVenda } from "@/contexts/AuthContext";
@@ -311,7 +311,7 @@ export default function DashboardSection() {
 
   // Preços dinâmicos via tRPC
   const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
-  const UNIDADES_DATA: typeof UNIDADES = (unidadesQuery.data as typeof UNIDADES | null) ?? UNIDADES;
+  const UNIDADES_DATA: typeof UNIDADES = normalizarUnidades((unidadesQuery.data as typeof UNIDADES | null) ?? UNIDADES);
 
   const unidades = useMemo(
     () => UNIDADES_DATA.map((u) => ({ ...u, status: unidadesStatus[u.id] || u.status })),
