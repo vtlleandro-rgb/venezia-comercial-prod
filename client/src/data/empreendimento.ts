@@ -37,7 +37,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: "Diferenciado",
     descricao: "Apartamento com 2 suítes, sacada com churrasqueira, maior área privativa do empreendimento (60,85m²).",
-    plantaImg: "/assets/venezia/planta-tipo-venezia.jpeg",
+    plantaImg: "/assets/venezia/planta-tipo-venezia.webp",
   },
   {
     id: "final-02",
@@ -48,7 +48,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: null,
     descricao: "Apartamento com 2 suítes, layout funcional e integrado, excelente iluminação natural (56,30m²).",
-    plantaImg: "/assets/venezia/planta-comercial-venezia.png",
+    plantaImg: "/assets/venezia/planta-comercial-venezia.webp",
   },
   {
     id: "final-03",
@@ -59,7 +59,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: null,
     descricao: "Apartamento com 2 suítes, planta espelhada do Final 02, mesma qualidade e acabamento (56,30m²).",
-    plantaImg: "/assets/venezia/planta-comercial-venezia.png",
+    plantaImg: "/assets/venezia/planta-comercial-venezia.webp",
   },
 ];
 
@@ -137,15 +137,15 @@ export const DIFERENCIAIS = [
 ];
 
 export const IMAGENS = {
-  heroBanner: "/assets/venezia/fachada-venezia-oficial.jpg",
-  lifestyle: "/assets/venezia/venezia-lifestyle.jpg",
-  location: "/assets/venezia/localizacao-venezia-oficial.jpg",
-  logoArtea: "/assets/venezia/logo-artea-branco.png",
-  logoArteaColor: "/assets/venezia/logo-artea.png",
-  logoVenezia: "/assets/venezia/logo-venezia-oficial.png",
-  logoVeneziaOficial: "/assets/venezia/logo-venezia-oficial.png",
-  logoBlueRealEstate: "/assets/venezia/logo-blue-real-estate.jpeg",
-  logoRbConstrutora: "/assets/venezia/logo-rb-construtora.jpeg",
+  heroBanner: "/assets/venezia/fachada-venezia-oficial.webp",
+  lifestyle: "/assets/venezia/venezia-lifestyle.webp",
+  location: "/assets/venezia/localizacao-venezia-oficial.webp",
+  logoArtea: "/assets/venezia/logo-artea-branco.webp",
+  logoArteaColor: "/assets/venezia/logo-artea.webp",
+  logoVenezia: "/assets/venezia/logo-venezia-oficial.webp",
+  logoVeneziaOficial: "/assets/venezia/logo-venezia-oficial.webp",
+  logoBlueRealEstate: "/assets/venezia/logo-blue-real-estate.webp",
+  logoRbConstrutora: "/assets/venezia/logo-rb-construtora.webp",
 };
 
 export const CONDICOES_COMERCIAIS = {

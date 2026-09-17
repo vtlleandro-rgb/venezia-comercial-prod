@@ -24,35 +24,35 @@ const GALERIA: GaleriaCategory[] = [
     id: "fachada",
     titulo: "Fachada",
     imagens: [
-      { id: "FACHADA-01", src: "/assets/venezia/fachada-venezia-oficial.jpg", alt: "Fachada oficial do Residencial Venezia" },
-      { id: "FACHADA-02", src: "/assets/venezia/hero-fachada-real.jpg", alt: "Perspectiva renderizada da fachada do Residencial Venezia" },
+      { id: "FACHADA-01", src: "/assets/venezia/fachada-venezia-oficial.webp", alt: "Fachada oficial do Residencial Venezia" },
+      { id: "FACHADA-02", src: "/assets/venezia/hero-fachada-real.webp", alt: "Perspectiva renderizada da fachada do Residencial Venezia" },
     ],
   },
   {
     id: "localizacao",
     titulo: "Localização",
     imagens: [
-      { id: "LOCAL-01", src: "/assets/venezia/localizacao-venezia-oficial.jpg", alt: "Mapa oficial de localização do Residencial Venezia" },
-      { id: "LOCAL-02", src: "/assets/venezia/venezia-location.jpg", alt: "Imagem de apoio da localização e entorno" },
+      { id: "LOCAL-01", src: "/assets/venezia/localizacao-venezia-oficial.webp", alt: "Mapa oficial de localização do Residencial Venezia" },
+      { id: "LOCAL-02", src: "/assets/venezia/venezia-location.webp", alt: "Imagem de apoio da localização e entorno" },
     ],
   },
   {
     id: "plantas",
     titulo: "Plantas e Áreas",
     imagens: [
-      { id: "PLANTA-01", src: "/assets/venezia/planta-comercial-venezia.png", alt: "Implantação comercial do Residencial Venezia" },
-      { id: "PLANTA-02", src: "/assets/venezia/planta-tipo-venezia.jpeg", alt: "Planta tipo do apartamento Venezia" },
-      { id: "AREAS-01", src: "/assets/venezia/quadro-areas-venezia.jpeg", alt: "Quadro oficial de áreas privativas das unidades" },
+      { id: "PLANTA-01", src: "/assets/venezia/planta-comercial-venezia.webp", alt: "Implantação comercial do Residencial Venezia" },
+      { id: "PLANTA-02", src: "/assets/venezia/planta-tipo-venezia.webp", alt: "Planta tipo do apartamento Venezia" },
+      { id: "AREAS-01", src: "/assets/venezia/quadro-areas-venezia.webp", alt: "Quadro oficial de áreas privativas das unidades" },
     ],
   },
   {
     id: "identidade",
     titulo: "Identidade",
     imagens: [
-      { id: "LOGO-01", src: "/assets/venezia/logo-venezia-oficial.png", alt: "Logo oficial do Residencial Venezia" },
-      { id: "LOGO-02", src: "/assets/venezia/logo-blue-real-estate.jpeg", alt: "Logo Blue Real Estate" },
-      { id: "LOGO-03", src: "/assets/venezia/logo-rb-construtora.jpeg", alt: "Logo RB Construtora" },
-      { id: "LOGO-04", src: "/assets/venezia/logo-artea.png", alt: "Logo Artea" },
+      { id: "LOGO-01", src: "/assets/venezia/logo-venezia-oficial.webp", alt: "Logo oficial do Residencial Venezia" },
+      { id: "LOGO-02", src: "/assets/venezia/logo-blue-real-estate.webp", alt: "Logo Blue Real Estate" },
+      { id: "LOGO-03", src: "/assets/venezia/logo-rb-construtora.webp", alt: "Logo RB Construtora" },
+      { id: "LOGO-04", src: "/assets/venezia/logo-artea.webp", alt: "Logo Artea" },
     ],
   },
 ];
