@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useUnidadesStatus } from "@/hooks/useUnidadesStatus";
-import { UNIDADES, EMPREENDIMENTO, CONDICOES_COMERCIAIS, type UnidadeStatus, type Unidade } from "@/data/empreendimento";
+import { UNIDADES, EMPREENDIMENTO, CONDICOES_COMERCIAIS, normalizarUnidades, type UnidadeStatus, type Unidade } from "@/data/empreendimento";
 import { trpc } from "@/lib/trpc";
 import { ArrowUpDown, Filter, CheckCircle2, Clock, XCircle, Lock, ShieldCheck, Settings, AlertTriangle } from "lucide-react";
 import { useAuth, type DadosVenda } from "@/contexts/AuthContext";
@@ -79,7 +79,7 @@ export default function TabelaSection() {
 
   // Preços dinâmicos via tRPC (fallback para UNIDADES estático)
   const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
-  const UNIDADES_DATA: Unidade[] = (unidadesQuery.data as Unidade[] | null) ?? UNIDADES;
+  const UNIDADES_DATA: Unidade[] = normalizarUnidades((unidadesQuery.data as Unidade[] | null) ?? UNIDADES);
 
   const unidadesComStatus: Unidade[] = useMemo(
     () => UNIDADES_DATA.map((u) => ({ ...u, status: unidadesStatus[u.id] || u.status })),

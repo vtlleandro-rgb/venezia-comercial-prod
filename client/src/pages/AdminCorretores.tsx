@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { getLoginUrl } from "@/const";
-import { UNIDADES, type Unidade } from "@/data/empreendimento";
+import { UNIDADES, calcularValorComDocumentacao, normalizarUnidades, type Unidade } from "@/data/empreendimento";
 import {
   Users,
   Building2,
@@ -87,7 +87,7 @@ export default function AdminCorretores() {
 
   useEffect(() => {
     if (unidadesQuery.data) {
-      setPrecosForm(unidadesQuery.data as Unidade[]);
+      setPrecosForm(normalizarUnidades(unidadesQuery.data as Unidade[]));
     }
   }, [unidadesQuery.data]);
 
@@ -744,7 +744,7 @@ export default function AdminCorretores() {
               </div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setPrecosForm([...UNIDADES])}
+                  onClick={() => setPrecosForm(normalizarUnidades(UNIDADES))}
                   className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Restaurar Padrão
@@ -787,21 +787,37 @@ export default function AdminCorretores() {
                           <td className="px-3 py-2 font-medium text-[#1a1a2e]">{u.numero}</td>
                           <td className="px-3 py-2 text-gray-600">{u.andar}º</td>
                           <td className="px-3 py-2 text-gray-600">{u.area.toFixed(2).replace('.', ',')}</td>
-                          {(["valorVenda", "valorComDocumentacao", "entrada20", "entradaMenosReforco", "parcela36x", "reforcoChaves", "financCEF", "precoM2"] as const).map((field) => (
-                            <td key={field} className="px-2 py-1.5">
-                              <input
-                                type="number"
-                                value={u[field]}
-                                step={field === "parcela36x" ? "0.01" : "1000"}
-                                onChange={(e) => {
-                                  const updated = [...precosForm];
-                                  updated[idx] = { ...updated[idx], [field]: Number(e.target.value) };
-                                  setPrecosForm(updated);
-                                }}
-                                className="w-28 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#c62828]/40 focus:border-[#c62828] bg-white"
-                              />
-                            </td>
-                          ))}
+                          {(["valorVenda", "valorComDocumentacao", "entrada20", "entradaMenosReforco", "parcela36x", "reforcoChaves", "financCEF", "precoM2"] as const).map((field) =>
+                            // Derivado de valorVenda — não editável, para não divergir.
+                            field === "valorComDocumentacao" ? (
+                              <td key={field} className="px-2 py-1.5">
+                                <span
+                                  title="Calculado automaticamente: Valor Venda + 4%"
+                                  className="block w-28 px-2 py-1 text-xs border border-transparent rounded bg-gray-100 text-gray-500 cursor-not-allowed"
+                                >
+                                  {calcularValorComDocumentacao(u.valorVenda).toLocaleString("pt-BR")}
+                                </span>
+                              </td>
+                            ) : (
+                              <td key={field} className="px-2 py-1.5">
+                                <input
+                                  type="number"
+                                  value={u[field]}
+                                  step={field === "parcela36x" ? "0.01" : "1000"}
+                                  onChange={(e) => {
+                                    const valor = Number(e.target.value);
+                                    const updated = [...precosForm];
+                                    updated[idx] = { ...updated[idx], [field]: valor };
+                                    if (field === "valorVenda") {
+                                      updated[idx].valorComDocumentacao = calcularValorComDocumentacao(valor);
+                                    }
+                                    setPrecosForm(updated);
+                                  }}
+                                  className="w-28 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#c62828]/40 focus:border-[#c62828] bg-white"
+                                />
+                              </td>
+                            )
+                          )}
                         </tr>
                       ))}
                     </tbody>
