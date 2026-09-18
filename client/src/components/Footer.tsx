@@ -214,11 +214,15 @@ export default function Footer({ corretor }: FooterProps) {
         <div className="grid md:grid-cols-3 gap-12">
           {/* Brand */}
           <div>
-            <img
-              src={IMAGENS.logoVeneziaOficial}
-              alt="Residencial Venezia"
-              className="h-14 w-auto mb-4 rounded"
-            />
+            {/* A logo tem fundo escuro e some contra o rodapé — vai sobre uma
+                base branca para garantir contraste. */}
+            <div className="inline-block bg-white rounded px-4 py-3 mb-4">
+              <img
+                src={IMAGENS.logoVeneziaOficial}
+                alt="Residencial Venezia"
+                className="h-14 w-auto block"
+              />
+            </div>
             <p className="text-white/50 text-sm leading-relaxed">
               Residencial Venezia. Sofisticação para viver. Exclusividade para investir.
             </p>
