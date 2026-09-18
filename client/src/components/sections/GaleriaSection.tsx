@@ -24,8 +24,8 @@ const GALERIA: GaleriaCategory[] = [
     id: "fachada",
     titulo: "Fachada",
     imagens: [
-      { id: "FACHADA-01", src: "/assets/venezia/fachada-venezia-oficial.webp", alt: "Fachada oficial do Residencial Venezia" },
-      { id: "FACHADA-02", src: "/assets/venezia/hero-fachada-real.webp", alt: "Perspectiva renderizada da fachada do Residencial Venezia" },
+      { id: "FACHADA-01", src: "/assets/venezia/fachada-01-dia.webp", alt: "Fachada do Residencial Venezia — perspectiva frontal diurna" },
+      { id: "FACHADA-02", src: "/assets/venezia/fachada-04-dia.webp", alt: "Fachada do Residencial Venezia — perspectiva lateral com acesso de veículos" },
     ],
   },
   {
@@ -33,15 +33,15 @@ const GALERIA: GaleriaCategory[] = [
     titulo: "Localização",
     imagens: [
       { id: "LOCAL-01", src: "/assets/venezia/localizacao-venezia-oficial.webp", alt: "Mapa oficial de localização do Residencial Venezia" },
-      { id: "LOCAL-02", src: "/assets/venezia/venezia-location.webp", alt: "Imagem de apoio da localização e entorno" },
     ],
   },
   {
     id: "plantas",
     titulo: "Plantas e Áreas",
     imagens: [
-      { id: "PLANTA-01", src: "/assets/venezia/planta-comercial-venezia.webp", alt: "Implantação comercial do Residencial Venezia" },
-      { id: "PLANTA-02", src: "/assets/venezia/planta-tipo-venezia.webp", alt: "Planta tipo do apartamento Venezia" },
+      { id: "PLANTA-01", src: "/assets/venezia/planta-pav-terreo.webp", alt: "Planta humanizada do pavimento térreo — 12 vagas, bicicletário e espaço pet" },
+      { id: "PLANTA-02", src: "/assets/venezia/planta-pav-tipo.webp", alt: "Planta humanizada do pavimento tipo — unidades Final 01, 02 e 03" },
+      { id: "PLANTA-03", src: "/assets/venezia/planta-rooftop.webp", alt: "Planta humanizada do rooftop — espaço gourmet, academia e espaço kids" },
       { id: "AREAS-01", src: "/assets/venezia/quadro-areas-venezia.webp", alt: "Quadro oficial de áreas privativas das unidades" },
     ],
   },
