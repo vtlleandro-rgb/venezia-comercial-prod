@@ -1,11 +1,11 @@
 /*
  * GALERIA DO EMPREENDIMENTO — RESIDENCIAL VENEZIA
- * Assets reais disponíveis no projeto, sem duplicar imagens com legendas falsas.
+ * 12 categorias + vídeo | material oficial (release midia-venezia), assets em WebP
  */
 
 import { useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ZoomIn, Play } from "lucide-react";
 
 interface GaleriaImage {
   id: string;
@@ -17,42 +17,117 @@ interface GaleriaCategory {
   id: string;
   titulo: string;
   imagens: GaleriaImage[];
+  video?: string;
 }
 
 const GALERIA: GaleriaCategory[] = [
   {
-    id: "fachada",
-    titulo: "Fachada",
+    id: "video",
+    titulo: "Vídeo de Apresentação",
+    imagens: [],
+    video: "/assets/venezia/venezia-apresentacao.mp4",
+  },
+  {
+    id: "fachadas-diurnas",
+    titulo: "Fachadas Diurnas",
     imagens: [
-      { id: "FACHADA-01", src: "/assets/venezia/fachada-01-dia.webp", alt: "Fachada do Residencial Venezia — perspectiva frontal diurna" },
-      { id: "FACHADA-02", src: "/assets/venezia/fachada-04-dia.webp", alt: "Fachada do Residencial Venezia — perspectiva lateral com acesso de veículos" },
+      { id: "IMG-01", src: "/assets/venezia/fachada-01-dia.webp", alt: "Fachada 01 — diurna" },
+      { id: "IMG-02", src: "/assets/venezia/fachada-02.webp", alt: "Fachada 02" },
+      { id: "IMG-03", src: "/assets/venezia/fachada-03.webp", alt: "Fachada 03" },
+      { id: "IMG-04", src: "/assets/venezia/fachada-04-dia.webp", alt: "Fachada 04 — diurna" },
     ],
   },
   {
-    id: "localizacao",
-    titulo: "Localização",
+    id: "noturnas",
+    titulo: "Imagens Noturnas",
     imagens: [
-      { id: "LOCAL-01", src: "/assets/venezia/localizacao-venezia-oficial.webp", alt: "Mapa oficial de localização do Residencial Venezia" },
+      { id: "IMG-05", src: "/assets/venezia/fachada-01-noite.webp", alt: "Fachada 01 — noturna" },
+      { id: "IMG-06", src: "/assets/venezia/fachada-04-noite.webp", alt: "Fachada 04 — noturna" },
     ],
   },
   {
-    id: "plantas",
-    titulo: "Plantas e Áreas",
+    id: "living-tipo1",
+    titulo: "Living — Apto Tipo 1",
     imagens: [
-      { id: "PLANTA-01", src: "/assets/venezia/planta-pav-terreo.webp", alt: "Planta humanizada do pavimento térreo — 12 vagas, bicicletário e espaço pet" },
-      { id: "PLANTA-02", src: "/assets/venezia/planta-pav-tipo.webp", alt: "Planta humanizada do pavimento tipo — unidades Final 01, 02 e 03" },
-      { id: "PLANTA-03", src: "/assets/venezia/planta-rooftop.webp", alt: "Planta humanizada do rooftop — espaço gourmet, academia e espaço kids" },
-      { id: "AREAS-01", src: "/assets/venezia/quadro-areas-venezia.webp", alt: "Quadro oficial de áreas privativas das unidades" },
+      { id: "IMG-07", src: "/assets/venezia/apto-1-living-1.webp", alt: "Living Apto Tipo 1 — ângulo 1" },
+      { id: "IMG-08", src: "/assets/venezia/apto-1-living-2.webp", alt: "Living Apto Tipo 1 — ângulo 2" },
+      { id: "IMG-09", src: "/assets/venezia/apto-1-living-3.webp", alt: "Living Apto Tipo 1 — ângulo 3" },
+      { id: "IMG-10", src: "/assets/venezia/apto-1-living-4.webp", alt: "Living Apto Tipo 1 — ângulo 4" },
+      { id: "IMG-11", src: "/assets/venezia/apto-1-sacada.webp", alt: "Sacada Apto Tipo 1" },
     ],
   },
   {
-    id: "identidade",
-    titulo: "Identidade",
+    id: "living-tipo23",
+    titulo: "Living — Apto Tipo 2 e 3",
     imagens: [
-      { id: "LOGO-01", src: "/assets/venezia/logo-venezia-oficial.webp", alt: "Logo oficial do Residencial Venezia" },
-      { id: "LOGO-02", src: "/assets/venezia/logo-blue-real-estate.webp", alt: "Logo Blue Real Estate" },
-      { id: "LOGO-03", src: "/assets/venezia/logo-rb-construtora.webp", alt: "Logo RB Construtora" },
-      { id: "LOGO-04", src: "/assets/venezia/logo-artea.webp", alt: "Logo Artea" },
+      { id: "IMG-12", src: "/assets/venezia/apto-2-e-3-living-1.webp", alt: "Living Apto Tipo 2/3 — ângulo 1" },
+      { id: "IMG-13", src: "/assets/venezia/apto-2-e-3-living-2.webp", alt: "Living Apto Tipo 2/3 — ângulo 2" },
+      { id: "IMG-14", src: "/assets/venezia/apto-2-e-3-living-3.webp", alt: "Living Apto Tipo 2/3 — ângulo 3" },
+      { id: "IMG-15", src: "/assets/venezia/apto-2-e-3-living-4.webp", alt: "Living Apto Tipo 2/3 — ângulo 4" },
+    ],
+  },
+  {
+    id: "suite-casal",
+    titulo: "Suíte Casal",
+    imagens: [
+      { id: "IMG-16", src: "/assets/venezia/apto-1-quarto-casal-b1.webp", alt: "Suíte casal Apto Tipo 1 — ângulo B1" },
+      { id: "IMG-17", src: "/assets/venezia/apto-1-quarto-casal-b2.webp", alt: "Suíte casal Apto Tipo 1 — ângulo B2" },
+      { id: "IMG-18", src: "/assets/venezia/apto-2-e-3-quarto-casal-a1.webp", alt: "Suíte casal Apto Tipo 2/3 — ângulo A1" },
+      { id: "IMG-19", src: "/assets/venezia/apto-2-e-3-apto-quarto-casal-a2.webp", alt: "Suíte casal Apto Tipo 2/3 — ângulo A2" },
+    ],
+  },
+  {
+    id: "suite-solteiro",
+    titulo: "Suíte Solteiro",
+    imagens: [
+      { id: "IMG-20", src: "/assets/venezia/apto-1-quarto-solteiro-1.webp", alt: "Suíte solteiro Apto Tipo 1 — ângulo 1" },
+      { id: "IMG-21", src: "/assets/venezia/apto-1-quarto-solteiro-2.webp", alt: "Suíte solteiro Apto Tipo 1 — ângulo 2" },
+    ],
+  },
+  {
+    id: "espaco-gourmet",
+    titulo: "Espaço Gourmet",
+    imagens: [
+      { id: "IMG-22", src: "/assets/venezia/lazer-gourmet-1.webp", alt: "Espaço Gourmet — ângulo 1" },
+      { id: "IMG-23", src: "/assets/venezia/lazer-gourmet-2.webp", alt: "Espaço Gourmet — ângulo 2" },
+      { id: "IMG-24", src: "/assets/venezia/lazer-gourmet-3.webp", alt: "Espaço Gourmet — ângulo 3" },
+      { id: "IMG-25", src: "/assets/venezia/lazer-gourmet-4.webp", alt: "Espaço Gourmet — ângulo 4" },
+      { id: "IMG-26", src: "/assets/venezia/lazer-gourmet-5.webp", alt: "Espaço Gourmet — ângulo 5" },
+    ],
+  },
+  {
+    id: "academia",
+    titulo: "Academia",
+    imagens: [
+      { id: "IMG-27", src: "/assets/venezia/lazer-academia-1.webp", alt: "Academia — ângulo 1" },
+      { id: "IMG-28", src: "/assets/venezia/lazer-academia-2.webp", alt: "Academia — ângulo 2" },
+      { id: "IMG-29", src: "/assets/venezia/lazer-academia-3.webp", alt: "Academia — ângulo 3" },
+    ],
+  },
+  {
+    id: "brinquedoteca",
+    titulo: "Brinquedoteca",
+    imagens: [
+      { id: "IMG-30", src: "/assets/venezia/lazer-brinquedoteca-1.webp", alt: "Brinquedoteca — ângulo 1" },
+      { id: "IMG-31", src: "/assets/venezia/lazer-brinquedoteca-2.webp", alt: "Brinquedoteca — ângulo 2" },
+      { id: "IMG-32", src: "/assets/venezia/lazer-brinquedoteca-3.webp", alt: "Brinquedoteca — ângulo 3" },
+    ],
+  },
+  {
+    id: "terraco-rooftop",
+    titulo: "Terraço (Rooftop)",
+    imagens: [
+      { id: "IMG-33", src: "/assets/venezia/lazer-rooftop-1.webp", alt: "Terraço / Rooftop — ângulo 1" },
+      { id: "IMG-34", src: "/assets/venezia/lazer-rooftop-2.webp", alt: "Terraço / Rooftop — ângulo 2" },
+      { id: "IMG-35", src: "/assets/venezia/lazer-rooftop-3.webp", alt: "Terraço / Rooftop — ângulo 3" },
+    ],
+  },
+  {
+    id: "pet-bicicletario",
+    titulo: "Pet Place e Bicicletário",
+    imagens: [
+      { id: "IMG-36", src: "/assets/venezia/terreo-pet-place.webp", alt: "Espaço Pet — térreo" },
+      { id: "IMG-37", src: "/assets/venezia/terreo-bicicletario.webp", alt: "Bicicletário — térreo" },
     ],
   },
 ];
@@ -107,43 +182,61 @@ export default function GaleriaSection() {
                 }`}
               >
                 {cat.titulo}
-                <span className="ml-1 opacity-60">({cat.imagens.length})</span>
+                {cat.video
+                  ? <span className="ml-1 opacity-60"><Play size={10} className="inline" /></span>
+                  : <span className="ml-1 opacity-60">({cat.imagens.length})</span>
+                }
               </button>
             ))}
           </div>
         </div>
 
-        {/* Image Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {imagens.map((img, idx) => (
-            <div
-              key={img.id}
-              onClick={() => openLightbox(idx)}
-              className="group relative overflow-hidden rounded-lg cursor-pointer bg-gray-100"
-            >
-              <img
-                src={img.src}
-                alt={img.alt}
-                className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
-                <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={28} />
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <p className="text-white text-[11px] font-medium">{img.id}</p>
-                <p className="text-white/80 text-[10px]">{img.alt}</p>
-              </div>
+        {/* Video Player or Image Grid */}
+        {categoriaAtual.video ? (
+          <div className="flex flex-col items-center">
+            {/* preload="none" + poster: os 33 MB só descem quando o visitante dá play */}
+            <video
+              src={categoriaAtual.video}
+              controls
+              playsInline
+              preload="none"
+              poster="/assets/venezia/venezia-apresentacao-poster.webp"
+              className="w-full max-w-md rounded-lg shadow-lg bg-black"
+            />
+            <p className="text-gray-400 text-xs mt-4">{categoriaAtual.titulo}</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {imagens.map((img, idx) => (
+                <div
+                  key={img.id}
+                  onClick={() => openLightbox(idx)}
+                  className="group relative overflow-hidden rounded-lg cursor-pointer bg-gray-100"
+                >
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                    <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={28} />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <p className="text-white text-[11px] font-medium">{img.id}</p>
+                    <p className="text-white/80 text-[10px]">{img.alt}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* Counter */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-400 text-xs">
-            {categoriaAtual.titulo} — {imagens.length} {imagens.length === 1 ? "imagem" : "imagens"}
-          </p>
-        </div>
+            <div className="mt-6 text-center">
+              <p className="text-gray-400 text-xs">
+                {categoriaAtual.titulo} — {imagens.length} {imagens.length === 1 ? "imagem" : "imagens"}
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Lightbox */}

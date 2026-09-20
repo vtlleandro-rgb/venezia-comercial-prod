@@ -23,7 +23,7 @@ const partners = [
     role: "Incorporação",
     name: "SPE Residencial Venezia",
     logo: IMAGENS.logoVeneziaOficial,
-    bgClass: "bg-[#0a0a0a]",
+    bgClass: "bg-white",
   },
 ];
 
