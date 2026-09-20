@@ -4,10 +4,16 @@ import { EMPREENDIMENTO } from "@/data/empreendimento";
 import { trpc } from "@/lib/trpc";
 import { Calculator, Landmark, CreditCard, Info, FileText, DollarSign } from "lucide-react";
 import PropostaComercial from "@/components/PropostaComercial";
-import { calcularSimulacaoCEF, CEF_PARAMS } from "@/lib/simuladorCEF";
+import { calcularSimulacaoCEF, CEF_PARAMS, PERIODICIDADE_REFORCO, type PeriodicidadeReforco } from "@/lib/simuladorCEF";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 }).format(value);
+
+const PLURAL_PERIODICIDADE: Record<PeriodicidadeReforco, string> = {
+  trimestral: "trimestrais",
+  semestral: "semestrais",
+  anual: "anuais",
+};
 
 const formatCurrencyDecimal = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 }).format(value);
@@ -20,7 +26,9 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
   const { ref, isVisible } = useScrollAnimation();
   const [valorImovel, setValorImovel] = useState(EMPREENDIMENTO.valorMin);
   const [percentualEntrada, setPercentualEntrada] = useState(20);
-  const [reforcos, setReforcos] = useState(0);
+  const [numParcelasEntrada, setNumParcelasEntrada] = useState(CEF_PARAMS.numParcelasEntrada);
+  const [valorReforco, setValorReforco] = useState(0);
+  const [periodicidadeReforco, setPeriodicidadeReforco] = useState<PeriodicidadeReforco>("semestral");
   const [prazoMeses, setPrazoMeses] = useState(420);
   const [isCotista, setIsCotista] = useState(false);
   const [showProposta, setShowProposta] = useState(false);
@@ -34,20 +42,23 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
     : EMPREENDIMENTO.valorMax;
 
   const simulacao = useMemo(() => {
-    return calcularSimulacaoCEF({ valorImovel, percentualEntrada, reforcos, prazoMeses, isCotista });
-  }, [valorImovel, percentualEntrada, reforcos, prazoMeses, isCotista]);
+    return calcularSimulacaoCEF({ valorImovel, percentualEntrada, numParcelasEntrada, valorReforco, periodicidadeReforco, prazoMeses, isCotista });
+  }, [valorImovel, percentualEntrada, numParcelasEntrada, valorReforco, periodicidadeReforco, prazoMeses, isCotista]);
 
   const prazoAnos = prazoMeses / 12;
 
-  // Formatar input de reforços
-  const handleReforcosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Formatar input do valor de cada reforço
+  const handleReforcoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "");
-    setReforcos(Number(raw));
+    setValorReforco(Number(raw));
   };
 
-  const reforcosFormatado = reforcos > 0
-    ? new Intl.NumberFormat("pt-BR").format(reforcos)
+  const reforcoFormatado = valorReforco > 0
+    ? new Intl.NumberFormat("pt-BR").format(valorReforco)
     : "";
+
+  const reforcoExcedeEntrada = simulacao.valorReforco * simulacao.quantidadeReforcos > simulacao.entradaTotal;
+  const nx = simulacao.numParcelasEntrada;
 
   return (
     <section id="simulador" className="py-24 bg-[#f8f7f4]">
@@ -122,26 +133,84 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
             </div>
           </div>
 
-          {/* Campo de Reforços */}
+          {/* Cursor de Parcelas da Entrada (máx. 48) */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">Reforços (abatido da entrada)</label>
+              <label htmlFor="parcelas-entrada" className="text-sm font-medium text-gray-700">Parcelas da Entrada</label>
+              <span className="text-sm font-bold text-[#c62828]">{numParcelasEntrada}x</span>
+            </div>
+            <input
+              id="parcelas-entrada"
+              type="range"
+              min={CEF_PARAMS.numParcelasEntradaMin}
+              max={CEF_PARAMS.numParcelasEntradaMax}
+              step={1}
+              value={numParcelasEntrada}
+              onChange={(e) => setNumParcelasEntrada(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#c62828]"
+            />
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>{CEF_PARAMS.numParcelasEntradaMin}x</span>
+              <span>{CEF_PARAMS.numParcelasEntradaMax}x (máximo)</span>
+            </div>
+          </div>
+
+          {/* Reforços periódicos */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="valor-reforco" className="text-sm font-medium text-gray-700">Reforços (abatidos da entrada)</label>
               <span className="text-xs text-gray-400">Opcional • Não altera o financiamento</span>
             </div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={reforcosFormatado}
-                onChange={handleReforcosChange}
-                placeholder="0"
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-[#1a1a2e] font-medium focus:outline-none focus:ring-2 focus:ring-[#c62828]/30 focus:border-[#c62828] transition-all"
-              />
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+                <input
+                  id="valor-reforco"
+                  type="text"
+                  inputMode="numeric"
+                  value={reforcoFormatado}
+                  onChange={handleReforcoChange}
+                  placeholder="Valor de cada reforço"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-[#1a1a2e] font-medium focus:outline-none focus:ring-2 focus:ring-[#c62828]/30 focus:border-[#c62828] transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2" role="group" aria-label="Periodicidade dos reforços">
+                {(Object.keys(PERIODICIDADE_REFORCO) as PeriodicidadeReforco[]).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPeriodicidadeReforco(p)}
+                    aria-pressed={periodicidadeReforco === p}
+                    className={`py-3 rounded-lg text-sm font-medium border transition-all ${
+                      periodicidadeReforco === p
+                        ? "bg-[#c62828] text-white border-[#c62828]"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-[#c62828]/50"
+                    }`}
+                  >
+                    {PERIODICIDADE_REFORCO[p].label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Reforços são pagos em datas específicas e reduzem o saldo parcelado da entrada (36x)
+            <p className="text-xs text-gray-400 mt-2">
+              {simulacao.quantidadeReforcos > 0 ? (
+                <>
+                  {simulacao.quantidadeReforcos} {simulacao.quantidadeReforcos === 1 ? "reforço" : "reforços"} de{" "}
+                  <span className="font-semibold text-gray-600">{formatCurrency(simulacao.valorReforco)}</span> ={" "}
+                  <span className="font-semibold text-gray-600">{formatCurrency(simulacao.reforcos)}</span>
+                  {" "}(meses {simulacao.mesesReforcos.join(", ")})
+                </>
+              ) : valorReforco > 0 ? (
+                <>Nenhum reforço {PERIODICIDADE_REFORCO[periodicidadeReforco].label.toLowerCase()} cabe em {nx} {nx === 1 ? "mês" : "meses"} de entrada</>
+              ) : (
+                <>Reforços {PLURAL_PERIODICIDADE[periodicidadeReforco]} dentro do prazo da entrada ({nx}x, máximo 48 meses) reduzem o saldo parcelado</>
+              )}
             </p>
+            {reforcoExcedeEntrada && (
+              <p className="text-xs text-[#c62828] mt-1">
+                Os reforços superam a entrada e foram limitados a {formatCurrency(simulacao.entradaTotal)}
+              </p>
+            )}
           </div>
 
           {/* Destaque: Entrada */}
@@ -152,7 +221,7 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
             </div>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-3xl font-bold text-[#c62828]">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
-              <span className="text-sm text-gray-500">/mês • 36 parcelas</span>
+              <span className="text-sm text-gray-500">/mês • {nx} {nx === 1 ? "parcela" : "parcelas"}</span>
             </div>
             <div className="mt-3 space-y-1">
               <p className="text-xs text-gray-600">
@@ -160,11 +229,11 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
               </p>
               {simulacao.reforcos > 0 && (
                 <p className="text-xs text-gray-600">
-                  Reforços: <span className="font-semibold text-[#c62828]">- {formatCurrency(simulacao.reforcos)}</span>
+                  Reforços ({simulacao.quantidadeReforcos}x {PERIODICIDADE_REFORCO[simulacao.periodicidadeReforco].label.toLowerCase()}): <span className="font-semibold text-[#c62828]">- {formatCurrency(simulacao.reforcos)}</span>
                 </p>
               )}
               <p className="text-xs text-gray-600">
-                Saldo Parcelado: <span className="font-semibold">{formatCurrency(simulacao.saldoParcelado)}</span> ÷ 36 = <span className="font-semibold">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
+                Saldo Parcelado: <span className="font-semibold">{formatCurrency(simulacao.saldoParcelado)}</span> ÷ {nx} = <span className="font-semibold">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
               </p>
             </div>
             <p className="text-xs text-gray-400 mt-2">
@@ -252,7 +321,7 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
                 <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.saldoParcelado)}</p>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-500">Parcela da Entrada (36x)</p>
+                <p className="text-xs text-gray-500">Parcela da Entrada ({nx}x)</p>
                 <p className="text-sm font-bold text-[#c62828]">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</p>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
@@ -307,8 +376,8 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
               <Info size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-xs text-blue-800">
                 <p className="font-medium mb-1">Parâmetros CEF — Faixa 3 MCMV — Tijucas/SC</p>
-                <p>Entrada mínima: 20% do valor | Parcelamento: 36x (INCC-M)</p>
-                <p>Reforços: abatidos da entrada antes do parcelamento (não alteram o financiamento)</p>
+                <p>Entrada mínima: 20% do valor | Parcelamento: até 48x (INCC-M)</p>
+                <p>Reforços: trimestrais, semestrais ou anuais dentro do prazo da entrada, abatidos antes do parcelamento (não alteram o financiamento)</p>
                 <p>Financiamento: máximo 80% via Programa MCMV | Sistema Price + TR | Prazo máximo: 420 meses</p>
               </div>
             </div>
@@ -339,7 +408,8 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
         onClose={() => setShowProposta(false)}
         valorSimulado={valorImovel}
         percentualEntradaSimulado={percentualEntrada}
-        reforcosSimulado={reforcos}
+        numParcelasEntradaSimulado={numParcelasEntrada}
+        reforcosSimulado={simulacao.reforcos}
         corretorData={corretor ? {
           id: corretor.id,
           nome: corretor.nome,

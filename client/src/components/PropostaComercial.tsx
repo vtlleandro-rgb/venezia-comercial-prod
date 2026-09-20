@@ -31,11 +31,12 @@ interface PropostaComercialProps {
   onClose: () => void;
   valorSimulado?: number;
   percentualEntradaSimulado?: number;
+  numParcelasEntradaSimulado?: number;
   reforcosSimulado?: number;
   corretorData?: CorretorData | null;
 }
 
-export default function PropostaComercial({ open, onClose, valorSimulado, percentualEntradaSimulado, reforcosSimulado, corretorData }: PropostaComercialProps) {
+export default function PropostaComercial({ open, onClose, valorSimulado, percentualEntradaSimulado, numParcelasEntradaSimulado, reforcosSimulado, corretorData }: PropostaComercialProps) {
   const { addProposta } = useAuth();
   const registrarLead = trpc.leads.registrar.useMutation();
   const salvarPropostaMutation = trpc.propostas.salvar.useMutation();
@@ -47,6 +48,7 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
   // ===== SLIDER DO VALOR DO IMÓVEL (MESMO DO SIMULADOR PÚBLICO) =====
   const [valorImovel, setValorImovel] = useState(valorSimulado || EMPREENDIMENTO.valorMin);
   const [percentualEntrada, setPercentualEntrada] = useState(percentualEntradaSimulado || 20);
+  const [numParcelasEntrada, setNumParcelasEntrada] = useState(numParcelasEntradaSimulado || CEF_PARAMS.numParcelasEntrada);
   const [reforcos, setReforcos] = useState(reforcosSimulado || 0);
   const [prazoMeses, setPrazoMeses] = useState(420);
   const [isCotista, setIsCotista] = useState(false);
@@ -58,6 +60,9 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
   useEffect(() => {
     if (percentualEntradaSimulado !== undefined) setPercentualEntrada(percentualEntradaSimulado);
   }, [percentualEntradaSimulado]);
+  useEffect(() => {
+    if (numParcelasEntradaSimulado !== undefined) setNumParcelasEntrada(numParcelasEntradaSimulado);
+  }, [numParcelasEntradaSimulado]);
   useEffect(() => {
     if (reforcosSimulado !== undefined) setReforcos(reforcosSimulado);
   }, [reforcosSimulado]);
@@ -101,8 +106,8 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
 
   // ===== CÁLCULOS CEF — HELPER COMPARTILHADO (FONTE ÚNICA) =====
   const simulacao = useMemo(() => {
-    return calcularSimulacaoCEF({ valorImovel, percentualEntrada, reforcos, prazoMeses, isCotista });
-  }, [valorImovel, percentualEntrada, reforcos, prazoMeses, isCotista]);
+    return calcularSimulacaoCEF({ valorImovel, percentualEntrada, numParcelasEntrada, reforcos, prazoMeses, isCotista });
+  }, [valorImovel, percentualEntrada, numParcelasEntrada, reforcos, prazoMeses, isCotista]);
 
   // Tipologia da unidade
   const tipologia = useMemo(() => {
@@ -242,11 +247,11 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#1a1a2e;line
 <div class="item"><span class="label">Entrada (${simulacao.percentualEntrada}%):</span><span class="value">${formatCurrency(simulacao.entradaTotal)}</span></div>
 ${simulacao.reforcos > 0 ? `<div class="item"><span class="label">Refor\u00e7os:</span><span class="value">- ${formatCurrency(simulacao.reforcos)}</span></div>` : ""}
 <div class="item"><span class="label">Saldo Parcelado:</span><span class="value">${formatCurrency(simulacao.saldoParcelado)}</span></div>
-<div class="item"><span class="label">Entrada Parcelada:</span><span class="value">36x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}</span></div>
+<div class="item"><span class="label">Entrada Parcelada:</span><span class="value">${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}</span></div>
 <div class="destaque">
 <p class="dl">Parcela da Entrada</p>
 <p class="dv">${formatCurrencyDecimal(simulacao.parcelaEntrada)}/m\u00eas</p>
-<p class="dd">36 parcelas \u2022 Corre\u00e7\u00e3o pelo INCC-M${simulacao.reforcos > 0 ? ` \u2022 Refor\u00e7os: ${formatCurrency(simulacao.reforcos)}` : ""}</p>
+<p class="dd">${simulacao.numParcelasEntrada} parcelas \u2022 Corre\u00e7\u00e3o pelo INCC-M${simulacao.reforcos > 0 ? ` \u2022 Refor\u00e7os: ${formatCurrency(simulacao.reforcos)}` : ""}</p>
 </div>
 </div>
 
@@ -543,7 +548,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
       `\u2705 Entrada Total: ${formatCurrency(simulacao.entradaTotal)}\n` +
       (simulacao.reforcos > 0 ? `\u2705 Refor\u00e7os: ${formatCurrency(simulacao.reforcos)}\n` : "") +
       `\u2705 Saldo Parcelado: ${formatCurrency(simulacao.saldoParcelado)}\n` +
-      `\u2705 Parcelamento: *36x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}*\n\n` +
+      `\u2705 Parcelamento: *${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}*\n\n` +
       `\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n` +
       `*\ud83c\udfe6 FINANCIAMENTO CEF (${simulacao.percentualFinanciado}%):*\n\n` +
       `\ud83d\udcb3 Saldo Financiado: ${formatCurrency(simulacao.valorFinanciado)}\n` +
@@ -583,7 +588,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
       `  Entrada Total (${simulacao.percentualEntrada}%): ${formatCurrency(simulacao.entradaTotal)}\n` +
       (simulacao.reforcos > 0 ? `  Refor\u00e7os: ${formatCurrency(simulacao.reforcos)}\n` : "") +
       `  Saldo Parcelado: ${formatCurrency(simulacao.saldoParcelado)}\n` +
-      `  Parcelamento: 36x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}\n\n` +
+      `  Parcelamento: ${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}\n\n` +
       `  >>> PARCELA DA ENTRADA: ${formatCurrencyDecimal(simulacao.parcelaEntrada)}/m\u00eas\n\n` +
       `${'\u2501'.repeat(50)}\n` +
       `FINANCIAMENTO CEF (${simulacao.percentualFinanciado}%)\n\n` +
@@ -741,7 +746,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Entrada Parcelada:</span>
-                  <span className="text-sm font-bold text-[#1a1a2e]">36x de {formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
+                  <span className="text-sm font-bold text-[#1a1a2e]">{simulacao.numParcelasEntrada}x de {formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
                 </div>
               </div>
               <div className="mt-4 bg-white rounded-lg p-3 text-center border border-[#c62828]/20">
