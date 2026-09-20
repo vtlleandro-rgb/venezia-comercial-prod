@@ -37,7 +37,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: "Diferenciado",
     descricao: "Apartamento com 2 suítes, sacada com churrasqueira, maior área privativa do empreendimento (60,85m²).",
-    plantaImg: "/assets/venezia/planta-tipo-venezia.jpeg",
+    plantaImg: "/assets/venezia/planta-humanizada-apto-1.webp",
   },
   {
     id: "final-02",
@@ -48,7 +48,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: null,
     descricao: "Apartamento com 2 suítes, layout funcional e integrado, excelente iluminação natural (56,30m²).",
-    plantaImg: "/assets/venezia/planta-comercial-venezia.png",
+    plantaImg: "/assets/venezia/planta-humanizada-apto-2.webp",
   },
   {
     id: "final-03",
@@ -59,7 +59,7 @@ export const TIPOLOGIAS = [
     vagas: 1,
     destaque: null,
     descricao: "Apartamento com 2 suítes, planta espelhada do Final 02, mesma qualidade e acabamento (56,30m²).",
-    plantaImg: "/assets/venezia/planta-comercial-venezia.png",
+    plantaImg: "/assets/venezia/planta-humanizada-apto-3.webp",
   },
 ];
 
