@@ -138,6 +138,7 @@ export const DIFERENCIAIS = [
 
 export const IMAGENS = {
   heroBanner: "/assets/venezia/fachada-venezia-oficial.jpg",
+  fachadaEmpreendimento: "/assets/venezia/fachada-03.webp",
   lifestyle: "/assets/venezia/venezia-lifestyle.jpg",
   location: "/assets/venezia/localizacao-venezia-oficial.jpg",
   logoArtea: "/assets/venezia/logo-artea-branco.png",
