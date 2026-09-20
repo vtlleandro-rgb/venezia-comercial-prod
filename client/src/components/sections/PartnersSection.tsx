@@ -1,23 +1,36 @@
 import { IMAGENS } from "@/data/empreendimento";
+import { Instagram } from "lucide-react";
 
-const partners = [
+interface Partner {
+  role: string;
+  name: string;
+  logo: string;
+  bgClass: string;
+  /** Perfil no Instagram (sem "@"). Quando presente, o card vira link. */
+  instagram?: string;
+}
+
+const partners: Partner[] = [
   {
     role: "Realização",
     name: "ARTEÁ Empreendimentos Imobiliários",
     logo: IMAGENS.logoArteaColor,
     bgClass: "bg-white",
+    instagram: "arteaempreendimentos",
   },
   {
     role: "Construção",
     name: "RB Construtora",
     logo: IMAGENS.logoRbConstrutora,
     bgClass: "bg-white",
+    instagram: "rebconstrucoes",
   },
   {
     role: "Vendas",
     name: "Blue Real Estate",
     logo: IMAGENS.logoBlueRealEstate,
     bgClass: "bg-white",
+    instagram: "bluerealestateimob",
   },
   {
     role: "Incorporação",
@@ -48,8 +61,13 @@ export default function PartnersSection() {
 
         {/* Grid de parceiros */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {partners.map((partner) => (
-            <div key={partner.role} className="flex flex-col items-center text-center group">
+          {partners.map((partner) => {
+            const Wrapper: "a" | "div" = partner.instagram ? "a" : "div";
+            const linkProps = partner.instagram
+              ? { href: `https://www.instagram.com/${partner.instagram}`, target: "_blank", rel: "noopener noreferrer", "aria-label": `Instagram de ${partner.name}` }
+              : {};
+            return (
+            <Wrapper key={partner.role} {...linkProps} className="flex flex-col items-center text-center group">
               {/* Card da logo */}
               <div
                 className={`${partner.bgClass} w-full aspect-square max-w-[180px] rounded-xl shadow-md border border-gray-100 flex items-center justify-center p-5 transition-all duration-300 group-hover:shadow-lg group-hover:scale-[1.02]`}
@@ -68,8 +86,14 @@ export default function PartnersSection() {
               <p className="mt-1 text-[#1a1a2e] text-sm font-medium leading-tight">
                 {partner.name}
               </p>
-            </div>
-          ))}
+              {partner.instagram && (
+                <p className="mt-1.5 inline-flex items-center gap-1 text-gray-400 text-xs group-hover:text-[#c62828] transition-colors">
+                  <Instagram size={12} /> @{partner.instagram}
+                </p>
+              )}
+            </Wrapper>
+            );
+          })}
         </div>
       </div>
     </section>
