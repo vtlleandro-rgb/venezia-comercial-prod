@@ -310,37 +310,37 @@ tr:nth-child(even){background:#f9f9f9}.total td{font-weight:bold;background:#f0f
 </style></head><body>
 <div class="header"><h1>VENEZIA</h1><h2>Residencial</h2><p class="date">Proposta Comercial | ${dataFormatada}</p></div>
 <div class="section"><div class="section-title">Dados do Comprador</div><div class="grid">
-<div class="item"><span class="l">Comprador:</span><span class="v">${comprador || "\u2014"}</span></div>
-<div class="item"><span class="l">CPF:</span><span class="v">${cpf || "\u2014"}</span></div>
-<div class="item"><span class="l">Telefone:</span><span class="v">${telefone || "\u2014"}</span></div>
-<div class="item"><span class="l">Imobili\u00e1ria:</span><span class="v">${imobiliaria || "\u2014"}</span></div>
-<div class="item"><span class="l">Corretor:</span><span class="v">${corretor || "\u2014"}</span></div>
+<div class="item"><span class="l">Comprador:</span><span class="v">${comprador || "—"}</span></div>
+<div class="item"><span class="l">CPF:</span><span class="v">${cpf || "—"}</span></div>
+<div class="item"><span class="l">Telefone:</span><span class="v">${telefone || "—"}</span></div>
+<div class="item"><span class="l">Imobiliária:</span><span class="v">${imobiliaria || "—"}</span></div>
+<div class="item"><span class="l">Corretor:</span><span class="v">${corretor || "—"}</span></div>
 <div class="item"><span class="l">Data:</span><span class="v">${dataFormatada}</span></div>
 </div></div>
-<div class="section"><div class="section-title">Im\u00f3vel</div><div class="grid">
+<div class="section"><div class="section-title">Imóvel</div><div class="grid">
 <div class="item"><span class="l">Unidade:</span><span class="v">${unidade.numero}</span></div>
-<div class="item"><span class="l">Andar:</span><span class="v">${unidade.andar}\u00ba Andar</span></div>
-<div class="item"><span class="l">\u00c1rea Privativa:</span><span class="v">${unidade.area.toFixed(2).replace(".", ",")} m\u00b2</span></div>
-<div class="item"><span class="l">R$/m\u00b2:</span><span class="v">${formatCurrency(unidade.precoM2)}</span></div>
+<div class="item"><span class="l">Andar:</span><span class="v">${unidade.andar}º Andar</span></div>
+<div class="item"><span class="l">Área Privativa:</span><span class="v">${unidade.area.toFixed(2).replace(".", ",")} m²</span></div>
+<div class="item"><span class="l">R$/m²:</span><span class="v">${formatCurrency(unidade.precoM2)}</span></div>
 <div class="item"><span class="l">Sacada:</span><span class="v">Com churrasqueira</span></div>
 <div class="item"><span class="l">Garagem:</span><span class="v">1 vaga coberta</span></div>
 </div></div>
-<div class="section"><div class="section-title">Composi\u00e7\u00e3o Financeira</div>
-<div class="highlight"><div class="lbl">Valor do Im\u00f3vel (${tipoValor === "com_doc" ? "Com Documenta\u00e7\u00e3o" : "Sem Documenta\u00e7\u00e3o"})</div><div class="big">${formatCurrency(valorBase)}</div></div>
-<table><thead><tr><th>Descri\u00e7\u00e3o</th><th>%</th><th>Valor</th></tr></thead><tbody>
-<tr><td>Entrada ${condicaoEntrada === "parcelada" ? `(${numParcelas}x de ${formatCurrency(valorParcelaEntrada)})` : "(\u00c0 Vista)"}</td><td>${percentEntrada}%</td><td><strong>${formatCurrency(valorEntrada)}</strong></td></tr>
+<div class="section"><div class="section-title">Composição Financeira</div>
+<div class="highlight"><div class="lbl">Valor do Imóvel (${tipoValor === "com_doc" ? "Com Documentação" : "Sem Documentação"})</div><div class="big">${formatCurrency(valorBase)}</div></div>
+<table><thead><tr><th>Descrição</th><th>%</th><th>Valor</th></tr></thead><tbody>
+<tr><td>Entrada ${condicaoEntrada === "parcelada" ? `(${numParcelas}x de ${formatCurrency(valorParcelaEntrada)})` : "(À Vista)"}</td><td>${percentEntrada}%</td><td><strong>${formatCurrency(valorEntrada)}</strong></td></tr>
 <tr><td>FGTS</td><td>${valorBase > 0 ? ((fgtsValue / valorBase) * 100).toFixed(1) : 0}%</td><td>${formatCurrency(fgtsValue)}</td></tr>
-<tr><td>Financiamento Banc\u00e1rio (CEF)</td><td>${percentFinanc.toFixed(1)}%</td><td>${formatCurrency(valorFinanciamento)}</td></tr>
+<tr><td>Financiamento Bancário (CEF)</td><td>${percentFinanc.toFixed(1)}%</td><td>${formatCurrency(valorFinanciamento)}</td></tr>
 <tr class="total"><td>Total</td><td>100%</td><td>${formatCurrency(valorBase)}</td></tr>
 </tbody></table>
-<div class="parcelas"><h4>Simula\u00e7\u00e3o de Parcelas (Taxa 9,49% a.a. - CEF)</h4><div class="pgrid">
-<div><div class="prazo">360 meses (30 anos)</div><div class="pval">${formatCurrency(parcelas.p360)}/m\u00eas</div></div>
-<div><div class="prazo">300 meses (25 anos)</div><div class="pval">${formatCurrency(parcelas.p300)}/m\u00eas</div></div>
-<div><div class="prazo">240 meses (20 anos)</div><div class="pval">${formatCurrency(parcelas.p240)}/m\u00eas</div></div>
+<div class="parcelas"><h4>Simulação de Parcelas (Taxa 9,49% a.a. - CEF)</h4><div class="pgrid">
+<div><div class="prazo">360 meses (30 anos)</div><div class="pval">${formatCurrency(parcelas.p360)}/mês</div></div>
+<div><div class="prazo">300 meses (25 anos)</div><div class="pval">${formatCurrency(parcelas.p300)}/mês</div></div>
+<div><div class="prazo">240 meses (20 anos)</div><div class="pval">${formatCurrency(parcelas.p240)}/mês</div></div>
 </div></div></div>
-${observacoes ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br>${observacoes.replace(/\n/g, "<br>")}</div>` : ""}
-<div class="footer"><p><strong>Residencial Venezia</strong> \u2014 SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA</p><p>Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p><p style="margin-top:8px">Proposta v\u00e1lida por 7 dias | Gerada em ${new Date().toLocaleDateString("pt-BR")} \u00e0s ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p></div>
-<div class="actions"><button class="btn btn-print" onclick="window.print()">Imprimir / Salvar PDF</button>${telefone ? "<a class=\"btn btn-whats\" href=\"https://wa.me/55" + telefone.replace(/\D/g, "") + "?text=" + encodeURIComponent("Ol\u00e1 " + (comprador || "") + "! Segue sua proposta comercial do Residencial Venezia - Unidade " + unidade.numero + ". Valor: " + formatCurrency(valorBase) + ". Entrada: " + formatCurrency(valorEntrada) + " (" + (condicaoEntrada === "parcelada" ? numParcelas + "x de " + formatCurrency(valorParcelaEntrada) : "\u00c0 Vista") + "). Financiamento: " + formatCurrency(valorFinanciamento) + ". Qualquer d\u00favida estou \u00e0 disposi\u00e7\u00e3o!") + "\" target=\"_blank\">Enviar via WhatsApp</a>" : ""}</div>
+${observacoes ? `<div class="obs"><strong>Observações:</strong><br>${observacoes.replace(/\n/g, "<br>")}</div>` : ""}
+<div class="footer"><p><strong>Residencial Venezia</strong> — SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA</p><p>Loteamento Terra Firme, Bairro Areias, Tijucas/SC</p><p style="margin-top:8px">Proposta válida por 7 dias | Gerada em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p></div>
+<div class="actions"><button class="btn btn-print" onclick="window.print()">Imprimir / Salvar PDF</button>${telefone ? "<a class=\"btn btn-whats\" href=\"https://wa.me/55" + telefone.replace(/\D/g, "") + "?text=" + encodeURIComponent("Olá " + (comprador || "") + "! Segue sua proposta comercial do Residencial Venezia - Unidade " + unidade.numero + ". Valor: " + formatCurrency(valorBase) + ". Entrada: " + formatCurrency(valorEntrada) + " (" + (condicaoEntrada === "parcelada" ? numParcelas + "x de " + formatCurrency(valorParcelaEntrada) : "À Vista") + "). Financiamento: " + formatCurrency(valorFinanciamento) + ". Qualquer dúvida estou à disposição!") + "\" target=\"_blank\">Enviar via WhatsApp</a>" : ""}</div>
 </body></html>`;
   }, [unidade, comprador, cpf, telefone, imobiliaria, corretor, dataAssinatura, tipoValor, valorBase, valorEntrada, fgtsValue, valorFinanciamento, percentEntrada, percentFinanc, observacoes, parcelas, condicaoEntrada, numParcelas, valorParcelaEntrada]);
 
@@ -348,7 +348,7 @@ ${observacoes ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br>${o
   const enviarEmail = useCallback(() => {
     if (!unidade) return;
 
-    // Gerar proposta em nova aba (link compartilh\u00e1vel)
+    // Gerar proposta em nova aba (link compartilhável)
     const htmlProposta = gerarHtmlPropostaLink();
     const blob = new Blob([htmlProposta], { type: "text/html" });
     const propostaUrl = URL.createObjectURL(blob);
@@ -367,40 +367,40 @@ ${observacoes ? `<div class="obs"><strong>Observa\u00e7\u00f5es:</strong><br>${o
     const corpo = encodeURIComponent(
 `Prezado(a) ${comprador || "Cliente"},
 
-Segue a proposta comercial referente \u00e0 Unidade ${unidade.numero} do Residencial Venezia.
+Segue a proposta comercial referente à Unidade ${unidade.numero} do Residencial Venezia.
 
-\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RESUMO DA PROPOSTA COMERCIAL
-\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-\u25b8 Unidade: ${unidade.numero} | ${unidade.andar}\u00ba Andar | ${unidade.area.toFixed(2).replace(".", ",")} m\u00b2
-\u25b8 Valor (${tipoValor === "com_doc" ? "Com Documenta\u00e7\u00e3o" : "Sem Documenta\u00e7\u00e3o"}): ${formatCurrency(valorBase)}
+▸ Unidade: ${unidade.numero} | ${unidade.andar}º Andar | ${unidade.area.toFixed(2).replace(".", ",")} m²
+▸ Valor (${tipoValor === "com_doc" ? "Com Documentação" : "Sem Documentação"}): ${formatCurrency(valorBase)}
 
-\u25b8 Entrada (${percentEntrada}%): ${formatCurrency(valorEntrada)}
-  ${condicaoEntrada === "parcelada" ? `\u2192 Parcelada em ${numParcelas}x de ${formatCurrency(valorParcelaEntrada)}` : "\u2192 Pagamento \u00e0 vista"}
-\u25b8 FGTS: ${formatCurrency(fgtsValue)}
-\u25b8 Financiamento CEF (${percentFinanc.toFixed(0)}%): ${formatCurrency(valorFinanciamento)}
+▸ Entrada (${percentEntrada}%): ${formatCurrency(valorEntrada)}
+  ${condicaoEntrada === "parcelada" ? `→ Parcelada em ${numParcelas}x de ${formatCurrency(valorParcelaEntrada)}` : "→ Pagamento à vista"}
+▸ FGTS: ${formatCurrency(fgtsValue)}
+▸ Financiamento CEF (${percentFinanc.toFixed(0)}%): ${formatCurrency(valorFinanciamento)}
 
-\u25b8 Parcelas CEF (9,49% a.a.):
-  360 meses: ${formatCurrency(parcelas.p360)}/m\u00eas
-  300 meses: ${formatCurrency(parcelas.p300)}/m\u00eas
-  240 meses: ${formatCurrency(parcelas.p240)}/m\u00eas
+▸ Parcelas CEF (9,49% a.a.):
+  360 meses: ${formatCurrency(parcelas.p360)}/mês
+  300 meses: ${formatCurrency(parcelas.p300)}/mês
+  240 meses: ${formatCurrency(parcelas.p240)}/mês
 
-${observacoes ? `\u25b8 Observa\u00e7\u00f5es: ${observacoes}\n\n` : ""}\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+${observacoes ? `▸ Observações: ${observacoes}\n\n` : ""}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-\ud83d\udccb A proposta completa foi aberta em uma nova aba.
-   Para anexar ao e-mail: Ctrl+P \u2192 "Salvar como PDF"
+📋 A proposta completa foi aberta em uma nova aba.
+   Para anexar ao e-mail: Ctrl+P → "Salvar como PDF"
 
-\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Imobili\u00e1ria: ${imobiliaria || "\u2014"}
-Corretor: ${corretor || "\u2014"}
+Imobiliária: ${imobiliaria || "—"}
+Corretor: ${corretor || "—"}
 Data: ${dataFormatada}
 
-Residencial Venezia \u2014 SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA
+Residencial Venezia — SPE-VENEZIA EMPREENDIMENTOS IMOBILIARIOS LTDA
 Loteamento Terra Firme, Bairro Areias, Tijucas/SC
 
-\u26a0\ufe0f Proposta v\u00e1lida por 7 dias a partir da data de emiss\u00e3o.
+⚠️ Proposta válida por 7 dias a partir da data de emissão.
 `);
     
     setTimeout(() => {
