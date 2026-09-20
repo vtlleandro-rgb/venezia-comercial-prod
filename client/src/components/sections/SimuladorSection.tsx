@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { EMPREENDIMENTO } from "@/data/empreendimento";
+import { EMPREENDIMENTO, UNIDADES, normalizarUnidades, calcularValorComDocumentacao, PERCENTUAL_DOCUMENTACAO, type Unidade } from "@/data/empreendimento";
 import { trpc } from "@/lib/trpc";
 import { Calculator, Landmark, CreditCard, Info, FileText, DollarSign } from "lucide-react";
 import PropostaComercial from "@/components/PropostaComercial";
@@ -24,7 +24,9 @@ interface SimuladorSectionProps {
 
 export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
   const { ref, isVisible } = useScrollAnimation();
-  const [valorImovel, setValorImovel] = useState(EMPREENDIMENTO.valorMin);
+  const [valorLivre, setValorLivre] = useState(EMPREENDIMENTO.valorMin);
+  const [unidadeId, setUnidadeId] = useState("");
+  const [comDocumentacao, setComDocumentacao] = useState(false);
   const [percentualEntrada, setPercentualEntrada] = useState(20);
   const [numParcelasEntrada, setNumParcelasEntrada] = useState(CEF_PARAMS.numParcelasEntrada);
   const [valorReforco, setValorReforco] = useState(0);
@@ -33,13 +35,20 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
   const [isCotista, setIsCotista] = useState(false);
   const [showProposta, setShowProposta] = useState(false);
 
+  // Unidades da tabela de vendas (banco, editadas no admin) com fallback para o arquivo estático
   const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
-  const valorMin = unidadesQuery.data
-    ? Math.min(...(unidadesQuery.data as any[]).map((u: any) => u.valorVenda))
-    : EMPREENDIMENTO.valorMin;
-  const valorMax = unidadesQuery.data
-    ? Math.max(...(unidadesQuery.data as any[]).map((u: any) => u.valorVenda))
-    : EMPREENDIMENTO.valorMax;
+  const unidades: Unidade[] = useMemo(
+    () => normalizarUnidades((unidadesQuery.data as Unidade[] | null) ?? UNIDADES),
+    [unidadesQuery.data],
+  );
+  const unidadesDisponiveis = unidades.filter((u) => u.status === "disponivel");
+  const unidade = unidades.find((u) => u.id === unidadeId) || null;
+  const valorMin = Math.min(...unidades.map((u) => u.valorVenda));
+  const valorMax = Math.max(...unidades.map((u) => u.valorVenda));
+
+  // Valor base: da tabela (unidade escolhida) ou livre (cursor). Com documentação soma 4%.
+  const valorBase = unidade ? unidade.valorVenda : valorLivre;
+  const valorImovel = comDocumentacao ? calcularValorComDocumentacao(valorBase) : valorBase;
 
   const simulacao = useMemo(() => {
     return calcularSimulacaoCEF({ valorImovel, percentualEntrada, numParcelasEntrada, valorReforco, periodicidadeReforco, prazoMeses, isCotista });
@@ -86,30 +95,76 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
             <span className="text-sm font-medium text-[#1a1a2e]">Caixa Econômica Federal • MCMV Faixa 3</span>
           </div>
 
-          {/* Valor do Imóvel - Slider */}
+          {/* Valor do Imóvel - Unidade da tabela + documentação + cursor livre */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">Valor do Imóvel</label>
+              <label htmlFor="unidade-simulador" className="text-sm font-medium text-gray-700">Valor do Imóvel</label>
               <span className="text-sm text-gray-500">
                 {formatCurrency(valorMin)} — {formatCurrency(valorMax)}
               </span>
             </div>
+            <div className="grid sm:grid-cols-2 gap-3 mb-4">
+              <select
+                id="unidade-simulador"
+                value={unidadeId}
+                onChange={(e) => setUnidadeId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm text-[#1a1a2e] font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#c62828]/30 focus:border-[#c62828] transition-all"
+              >
+                <option value="">Valor livre — use o cursor abaixo</option>
+                {unidadesDisponiveis.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    Unidade {u.numero} — {u.andar}º andar — {u.area.toFixed(2).replace(".", ",")} m² — {formatCurrency(u.valorVenda)}
+                  </option>
+                ))}
+              </select>
+              <div className="grid grid-cols-2 gap-2" role="group" aria-label="Documentação">
+                <button
+                  type="button"
+                  onClick={() => setComDocumentacao(false)}
+                  aria-pressed={!comDocumentacao}
+                  className={`py-3 rounded-lg text-sm font-medium border transition-all ${
+                    !comDocumentacao ? "bg-[#1a1a2e] text-white border-[#1a1a2e]" : "bg-white text-gray-700 border-gray-200 hover:border-[#1a1a2e]/50"
+                  }`}
+                >
+                  Sem documentação
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setComDocumentacao(true)}
+                  aria-pressed={comDocumentacao}
+                  className={`py-3 rounded-lg text-sm font-medium border transition-all ${
+                    comDocumentacao ? "bg-[#1a1a2e] text-white border-[#1a1a2e]" : "bg-white text-gray-700 border-gray-200 hover:border-[#1a1a2e]/50"
+                  }`}
+                >
+                  Com documentação (+{PERCENTUAL_DOCUMENTACAO * 100}%)
+                </button>
+              </div>
+            </div>
             <div className="text-center mb-3">
               <span className="text-3xl font-bold text-[#1a1a2e]">{formatCurrency(valorImovel)}</span>
+              <p className="text-xs text-gray-500 mt-1">
+                {unidade ? `Unidade ${unidade.numero} — valor da tabela ${formatCurrency(unidade.valorVenda)}` : `Valor livre ${formatCurrency(valorLivre)}`}
+                {comDocumentacao ? ` + ${PERCENTUAL_DOCUMENTACAO * 100}% de documentação = ${formatCurrency(valorImovel)}` : " (sem documentação)"}
+              </p>
             </div>
-            <input
-              type="range"
-              min={valorMin}
-              max={valorMax}
-              step={1000}
-              value={Math.min(Math.max(valorImovel, valorMin), valorMax)}
-              onChange={(e) => setValorImovel(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#c62828]"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>{formatCurrency(valorMin)}</span>
-              <span>{formatCurrency(valorMax)}</span>
-            </div>
+            {!unidade && (
+              <>
+                <input
+                  id="valor-livre"
+                  type="range"
+                  min={valorMin}
+                  max={valorMax}
+                  step={1000}
+                  value={Math.min(Math.max(valorLivre, valorMin), valorMax)}
+                  onChange={(e) => setValorLivre(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#c62828]"
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>{formatCurrency(valorMin)}</span>
+                  <span>{formatCurrency(valorMax)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Cursor de Entrada (min 20%) */}
@@ -406,10 +461,13 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
       <PropostaComercial
         open={showProposta}
         onClose={() => setShowProposta(false)}
-        valorSimulado={valorImovel}
+        valorSimulado={valorLivre}
+        unidadeIdSimulado={unidadeId}
+        comDocumentacaoSimulado={comDocumentacao}
         percentualEntradaSimulado={percentualEntrada}
         numParcelasEntradaSimulado={numParcelasEntrada}
-        reforcosSimulado={simulacao.reforcos}
+        valorReforcoSimulado={valorReforco}
+        periodicidadeReforcoSimulado={periodicidadeReforco}
         corretorData={corretor ? {
           id: corretor.id,
           nome: corretor.nome,

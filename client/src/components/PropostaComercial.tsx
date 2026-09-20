@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { X, FileText, Printer, Share2, Mail, MessageCircle, Building2, User, CreditCard, Home, Eye, Calculator, Landmark, Download, Loader2, CheckCircle2, DollarSign } from "lucide-react";
-import { UNIDADES, EMPREENDIMENTO, TIPOLOGIAS, IMAGENS, CONDICOES_COMERCIAIS, type Unidade } from "@/data/empreendimento";
+import { X, FileText, Printer, Share2, Mail, MessageCircle, Building2, User, CreditCard, Eye, Calculator, Landmark, Download, Loader2, CheckCircle2, DollarSign } from "lucide-react";
+import { UNIDADES, EMPREENDIMENTO, TIPOLOGIAS, IMAGENS, CONDICOES_COMERCIAIS, normalizarUnidades, calcularValorComDocumentacao, PERCENTUAL_DOCUMENTACAO, type Unidade } from "@/data/empreendimento";
 import { useAuth } from "@/contexts/AuthContext";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 import { apiUrl } from "@/lib/api";
-import { calcularSimulacaoCEF, CEF_PARAMS } from "@/lib/simuladorCEF";
+import { calcularSimulacaoCEF, CEF_PARAMS, PERIODICIDADE_REFORCO, type PeriodicidadeReforco } from "@/lib/simuladorCEF";
 import { generatePdfClientSide } from "@/lib/pdfClientFallback";
 
 const formatCurrency = (value: number) =>
@@ -29,14 +29,21 @@ interface CorretorData {
 interface PropostaComercialProps {
   open: boolean;
   onClose: () => void;
+  /** Valor livre do cursor (usado quando nenhuma unidade está selecionada) */
   valorSimulado?: number;
+  unidadeIdSimulado?: string;
+  comDocumentacaoSimulado?: boolean;
   percentualEntradaSimulado?: number;
   numParcelasEntradaSimulado?: number;
-  reforcosSimulado?: number;
+  valorReforcoSimulado?: number;
+  periodicidadeReforcoSimulado?: PeriodicidadeReforco;
   corretorData?: CorretorData | null;
 }
 
-export default function PropostaComercial({ open, onClose, valorSimulado, percentualEntradaSimulado, numParcelasEntradaSimulado, reforcosSimulado, corretorData }: PropostaComercialProps) {
+export default function PropostaComercial({
+  open, onClose, valorSimulado, unidadeIdSimulado, comDocumentacaoSimulado, percentualEntradaSimulado,
+  numParcelasEntradaSimulado, valorReforcoSimulado, periodicidadeReforcoSimulado, corretorData,
+}: PropostaComercialProps) {
   const { addProposta } = useAuth();
   const registrarLead = trpc.leads.registrar.useMutation();
   const salvarPropostaMutation = trpc.propostas.salvar.useMutation();
@@ -46,17 +53,22 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
   const [pdfStatus, setPdfStatus] = useState<"idle" | "saving" | "rendering" | "finalizing" | "done" | "error">("idle");
 
   // ===== SLIDER DO VALOR DO IMÓVEL (MESMO DO SIMULADOR PÚBLICO) =====
-  const [valorImovel, setValorImovel] = useState(valorSimulado || EMPREENDIMENTO.valorMin);
+  const [valorLivre, setValorLivre] = useState(valorSimulado || EMPREENDIMENTO.valorMin);
+  const [comDocumentacao, setComDocumentacao] = useState(comDocumentacaoSimulado ?? false);
   const [percentualEntrada, setPercentualEntrada] = useState(percentualEntradaSimulado || 20);
   const [numParcelasEntrada, setNumParcelasEntrada] = useState(numParcelasEntradaSimulado || CEF_PARAMS.numParcelasEntrada);
-  const [reforcos, setReforcos] = useState(reforcosSimulado || 0);
+  const [valorReforco, setValorReforco] = useState(valorReforcoSimulado || 0);
+  const [periodicidadeReforco, setPeriodicidadeReforco] = useState<PeriodicidadeReforco>(periodicidadeReforcoSimulado || "semestral");
   const [prazoMeses, setPrazoMeses] = useState(420);
   const [isCotista, setIsCotista] = useState(false);
 
   // Sincronizar valores vindos do SimuladorSection
   useEffect(() => {
-    if (valorSimulado) setValorImovel(valorSimulado);
+    if (valorSimulado) setValorLivre(valorSimulado);
   }, [valorSimulado]);
+  useEffect(() => {
+    if (comDocumentacaoSimulado !== undefined) setComDocumentacao(comDocumentacaoSimulado);
+  }, [comDocumentacaoSimulado]);
   useEffect(() => {
     if (percentualEntradaSimulado !== undefined) setPercentualEntrada(percentualEntradaSimulado);
   }, [percentualEntradaSimulado]);
@@ -64,19 +76,27 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
     if (numParcelasEntradaSimulado !== undefined) setNumParcelasEntrada(numParcelasEntradaSimulado);
   }, [numParcelasEntradaSimulado]);
   useEffect(() => {
-    if (reforcosSimulado !== undefined) setReforcos(reforcosSimulado);
-  }, [reforcosSimulado]);
-
-  // Seleção de unidade (opcional - preenche valor automaticamente)
-  const [unidadeId, setUnidadeId] = useState<string>("");
-  const unidade = useMemo(() => UNIDADES.find((u) => u.id === unidadeId) || null, [unidadeId]);
-
-  // Quando seleciona unidade, atualiza o slider para o valor da unidade
+    if (valorReforcoSimulado !== undefined) setValorReforco(valorReforcoSimulado);
+  }, [valorReforcoSimulado]);
   useEffect(() => {
-    if (unidade) {
-      setValorImovel(unidade.valorVenda);
-    }
-  }, [unidade]);
+    if (periodicidadeReforcoSimulado !== undefined) setPeriodicidadeReforco(periodicidadeReforcoSimulado);
+  }, [periodicidadeReforcoSimulado]);
+
+  // Seleção de unidade — mesma fonte da tabela de vendas (banco, com fallback estático), vinda do simulador
+  const unidadesQuery = trpc.configuracoes.getUnidades.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
+  const unidades: Unidade[] = useMemo(
+    () => normalizarUnidades((unidadesQuery.data as Unidade[] | null) ?? UNIDADES),
+    [unidadesQuery.data],
+  );
+  const [unidadeId, setUnidadeId] = useState<string>(unidadeIdSimulado || "");
+  useEffect(() => {
+    if (unidadeIdSimulado !== undefined) setUnidadeId(unidadeIdSimulado);
+  }, [unidadeIdSimulado]);
+  const unidade = useMemo(() => unidades.find((u) => u.id === unidadeId) || null, [unidades, unidadeId]);
+
+  // Valor base: tabela (unidade) ou livre (cursor); com documentação soma 4%
+  const valorBase = unidade ? unidade.valorVenda : valorLivre;
+  const valorImovel = comDocumentacao ? calcularValorComDocumentacao(valorBase) : valorBase;
 
   // Dados do comprador
   const [comprador, setComprador] = useState("");
@@ -106,8 +126,8 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
 
   // ===== CÁLCULOS CEF — HELPER COMPARTILHADO (FONTE ÚNICA) =====
   const simulacao = useMemo(() => {
-    return calcularSimulacaoCEF({ valorImovel, percentualEntrada, numParcelasEntrada, reforcos, prazoMeses, isCotista });
-  }, [valorImovel, percentualEntrada, numParcelasEntrada, reforcos, prazoMeses, isCotista]);
+    return calcularSimulacaoCEF({ valorImovel, percentualEntrada, numParcelasEntrada, valorReforco, periodicidadeReforco, prazoMeses, isCotista });
+  }, [valorImovel, percentualEntrada, numParcelasEntrada, valorReforco, periodicidadeReforco, prazoMeses, isCotista]);
 
   // Tipologia da unidade
   const tipologia = useMemo(() => {
@@ -117,14 +137,20 @@ export default function PropostaComercial({ open, onClose, valorSimulado, percen
 
   const prazoAnos = prazoMeses / 12;
 
-  // Formatar input de reforços
-  const handleReforcosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Formatar input do valor de cada reforço
+  const handleReforcoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "");
-    setReforcos(Number(raw));
+    setValorReforco(Number(raw));
   };
 
-  const reforcosFormatado = reforcos > 0
-    ? new Intl.NumberFormat("pt-BR").format(reforcos)
+  const reforcoFormatado = valorReforco > 0
+    ? new Intl.NumberFormat("pt-BR").format(valorReforco)
+    : "";
+
+  // Textos compartilhados por PDF, WhatsApp, e-mail e modal
+  const docLabel = comDocumentacao ? ` (com documentação ${PERCENTUAL_DOCUMENTACAO * 100}%)` : "";
+  const reforcosLabel = simulacao.quantidadeReforcos > 0
+    ? `${simulacao.quantidadeReforcos}x ${PERIODICIDADE_REFORCO[simulacao.periodicidadeReforco].label.toLowerCase()} de ${formatCurrency(simulacao.valorReforco)}`
     : "";
 
   // ===== GERAR HTML DA PROPOSTA =====
@@ -236,16 +262,16 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#1a1a2e;line
 <div class="data-item"><span class="label">Unidade:</span><span class="value">${unidade ? unidade.numero : "A definir"}</span></div>
 <div class="data-item"><span class="label">\u00c1rea Privativa:</span><span class="value">${areaFormatada} m\u00b2</span></div>
 <div class="data-item"><span class="label">Tipologia:</span><span class="value">${tipologia.nome}</span></div>
-<div class="data-item"><span class="label">Valor do Im\u00f3vel:</span><span class="value">${formatCurrency(simulacao.valorImovel)}</span></div>
+<div class="data-item"><span class="label">Valor do Im\u00f3vel:</span><span class="value">${formatCurrency(simulacao.valorImovel)}${docLabel}</span></div>
 </div>
 </div>
 
 <!-- BLOCO 1: DURANTE A OBRA (ENTRADA) -->
 <div class="bloco-obra">
 <h3>\u2460 Durante a Obra \u2014 Entrada ${simulacao.percentualEntrada}%</h3>
-<div class="item"><span class="label">Valor do Im\u00f3vel:</span><span class="value">${formatCurrency(simulacao.valorImovel)}</span></div>
+<div class="item"><span class="label">Valor do Im\u00f3vel:</span><span class="value">${formatCurrency(simulacao.valorImovel)}${docLabel}</span></div>
 <div class="item"><span class="label">Entrada (${simulacao.percentualEntrada}%):</span><span class="value">${formatCurrency(simulacao.entradaTotal)}</span></div>
-${simulacao.reforcos > 0 ? `<div class="item"><span class="label">Refor\u00e7os:</span><span class="value">- ${formatCurrency(simulacao.reforcos)}</span></div>` : ""}
+${simulacao.reforcos > 0 ? `<div class="item"><span class="label">Refor\u00e7os${reforcosLabel ? ` (${reforcosLabel})` : ""}:</span><span class="value">- ${formatCurrency(simulacao.reforcos)}</span></div>` : ""}
 <div class="item"><span class="label">Saldo Parcelado:</span><span class="value">${formatCurrency(simulacao.saldoParcelado)}</span></div>
 <div class="item"><span class="label">Entrada Parcelada:</span><span class="value">${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}</span></div>
 <div class="destaque">
@@ -542,11 +568,11 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
       `\ud83c\udfe2 *${EMPREENDIMENTO.nome}*\n` +
       `\ud83d\udccd ${EMPREENDIMENTO.localizacao}\n` +
       (unidade ? `\ud83c\udfe0 Unidade ${unidade.numero} \u2014 ${unidade.area.toFixed(2).replace(".", ",")} m\u00b2\n` : "") +
-      `\n\ud83d\udcb0 *VALOR DO IM\u00d3VEL:* ${formatCurrency(simulacao.valorImovel)}\n\n` +
+      `\n\ud83d\udcb0 *VALOR DO IM\u00d3VEL:* ${formatCurrency(simulacao.valorImovel)}${docLabel}\n\n` +
       `\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n` +
       `*\ud83d\udee0\ufe0f DURANTE A OBRA (Entrada ${simulacao.percentualEntrada}%):*\n\n` +
       `\u2705 Entrada Total: ${formatCurrency(simulacao.entradaTotal)}\n` +
-      (simulacao.reforcos > 0 ? `\u2705 Refor\u00e7os: ${formatCurrency(simulacao.reforcos)}\n` : "") +
+      (simulacao.reforcos > 0 ? `\u2705 Refor\u00e7os${reforcosLabel ? ` (${reforcosLabel})` : ""}: ${formatCurrency(simulacao.reforcos)}\n` : "") +
       `\u2705 Saldo Parcelado: ${formatCurrency(simulacao.saldoParcelado)}\n` +
       `\u2705 Parcelamento: *${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}*\n\n` +
       `\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n` +
@@ -582,11 +608,11 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
       `Empreendimento: ${EMPREENDIMENTO.nome}\n` +
       `Localiza\u00e7\u00e3o: ${EMPREENDIMENTO.localizacao}\n` +
       (unidade ? `Unidade: ${unidade.numero} \u2014 ${unidade.area.toFixed(2).replace(".", ",")} m\u00b2\n` : "") +
-      `Valor do Im\u00f3vel: ${formatCurrency(simulacao.valorImovel)}\n\n` +
+      `Valor do Im\u00f3vel: ${formatCurrency(simulacao.valorImovel)}${docLabel}\n\n` +
       `${'\u2501'.repeat(50)}\n` +
       `DURANTE A OBRA (ENTRADA ${simulacao.percentualEntrada}%)\n\n` +
       `  Entrada Total (${simulacao.percentualEntrada}%): ${formatCurrency(simulacao.entradaTotal)}\n` +
-      (simulacao.reforcos > 0 ? `  Refor\u00e7os: ${formatCurrency(simulacao.reforcos)}\n` : "") +
+      (simulacao.reforcos > 0 ? `  Refor\u00e7os${reforcosLabel ? ` (${reforcosLabel})` : ""}: ${formatCurrency(simulacao.reforcos)}\n` : "") +
       `  Saldo Parcelado: ${formatCurrency(simulacao.saldoParcelado)}\n` +
       `  Parcelamento: ${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}\n\n` +
       `  >>> PARCELA DA ENTRADA: ${formatCurrencyDecimal(simulacao.parcelaEntrada)}/m\u00eas\n\n` +
@@ -654,30 +680,75 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
               <span className="text-[10px] bg-[#c62828]/10 text-[#c62828] px-2 py-0.5 rounded-full font-medium">Mesmo da p\u00e1gina</span>
             </div>
 
-            {/* Slider do Valor do Imóvel */}
+            {/* Valor do Imóvel: unidade da tabela + documentação + cursor livre (importados do simulador) */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">Valor do Im\u00f3vel</label>
+                <label htmlFor="unidade-proposta" className="text-sm font-medium text-gray-700">Valor do Imóvel</label>
                 <span className="text-xs text-gray-500">
-                  {formatCurrency(EMPREENDIMENTO.valorMin)} \u2014 {formatCurrency(EMPREENDIMENTO.valorMax)}
+                  {formatCurrency(EMPREENDIMENTO.valorMin)} — {formatCurrency(EMPREENDIMENTO.valorMax)}
                 </span>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-2 mb-3">
+                <select
+                  id="unidade-proposta"
+                  value={unidadeId}
+                  onChange={(e) => setUnidadeId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-[#1a1a2e] font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#c62828]/30 focus:border-[#c62828] transition-all"
+                >
+                  <option value="">Valor livre — use o cursor abaixo</option>
+                  {unidades.filter((u) => u.status === "disponivel").map((u) => (
+                    <option key={u.id} value={u.id}>
+                      Unidade {u.numero} — {u.andar}º andar — {u.area.toFixed(2).replace(".", ",")} m² — {formatCurrency(u.valorVenda)}
+                    </option>
+                  ))}
+                </select>
+                <div className="grid grid-cols-2 gap-2" role="group" aria-label="Documentação">
+                  <button
+                    type="button"
+                    onClick={() => setComDocumentacao(false)}
+                    aria-pressed={!comDocumentacao}
+                    className={`py-2.5 rounded-lg text-sm font-medium border transition-all ${
+                      !comDocumentacao ? "bg-[#1a1a2e] text-white border-[#1a1a2e]" : "bg-white text-gray-700 border-gray-200 hover:border-[#1a1a2e]/50"
+                    }`}
+                  >
+                    Sem documentação
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setComDocumentacao(true)}
+                    aria-pressed={comDocumentacao}
+                    className={`py-2.5 rounded-lg text-sm font-medium border transition-all ${
+                      comDocumentacao ? "bg-[#1a1a2e] text-white border-[#1a1a2e]" : "bg-white text-gray-700 border-gray-200 hover:border-[#1a1a2e]/50"
+                    }`}
+                  >
+                    Com documentação (+{PERCENTUAL_DOCUMENTACAO * 100}%)
+                  </button>
+                </div>
               </div>
               <div className="text-center mb-3">
                 <span className="text-3xl font-bold text-[#1a1a2e]">{formatCurrency(valorImovel)}</span>
+                <p className="text-xs text-gray-500 mt-1">
+                  {unidade ? `Unidade ${unidade.numero} — valor da tabela ${formatCurrency(unidade.valorVenda)}` : `Valor livre ${formatCurrency(valorLivre)}`}
+                  {comDocumentacao ? ` + ${PERCENTUAL_DOCUMENTACAO * 100}% de documentação = ${formatCurrency(valorImovel)}` : " (sem documentação)"}
+                </p>
               </div>
-              <input
-                type="range"
-                min={EMPREENDIMENTO.valorMin}
-                max={EMPREENDIMENTO.valorMax}
-                step={1000}
-                value={valorImovel}
-                onChange={(e) => setValorImovel(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#c62828]"
-              />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>{formatCurrency(EMPREENDIMENTO.valorMin)}</span>
-                <span>{formatCurrency(EMPREENDIMENTO.valorMax)}</span>
-              </div>
+              {!unidade && (
+                <>
+                  <input
+                    type="range"
+                    min={EMPREENDIMENTO.valorMin}
+                    max={EMPREENDIMENTO.valorMax}
+                    step={1000}
+                    value={Math.min(Math.max(valorLivre, EMPREENDIMENTO.valorMin), EMPREENDIMENTO.valorMax)}
+                    onChange={(e) => setValorLivre(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#c62828]"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>{formatCurrency(EMPREENDIMENTO.valorMin)}</span>
+                    <span>{formatCurrency(EMPREENDIMENTO.valorMax)}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Cursor de Entrada (min 20%) */}
@@ -701,23 +772,70 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
               </div>
             </div>
 
-            {/* Campo de Reforços */}
+            {/* Parcelas da Entrada (máx. 48) */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">Refor\u00e7os</label>
-                <span className="text-xs text-gray-400">N\u00e3o altera o financiamento</span>
+                <label htmlFor="parcelas-entrada-proposta" className="text-sm font-medium text-gray-700">Parcelas da Entrada</label>
+                <span className="text-sm font-bold text-[#c62828]">{numParcelasEntrada}x</span>
               </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={reforcosFormatado}
-                  onChange={handleReforcosChange}
-                  placeholder="0"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-[#1a1a2e] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#c62828]/30 focus:border-[#c62828] transition-all"
-                />
+              <input
+                id="parcelas-entrada-proposta"
+                type="range"
+                min={CEF_PARAMS.numParcelasEntradaMin}
+                max={CEF_PARAMS.numParcelasEntradaMax}
+                step={1}
+                value={numParcelasEntrada}
+                onChange={(e) => setNumParcelasEntrada(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#c62828]"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>{CEF_PARAMS.numParcelasEntradaMin}x</span>
+                <span>{CEF_PARAMS.numParcelasEntradaMax}x (máximo)</span>
               </div>
+            </div>
+
+            {/* Reforços periódicos */}
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="valor-reforco-proposta" className="text-sm font-medium text-gray-700">Reforços</label>
+                <span className="text-xs text-gray-400">Não altera o financiamento</span>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-2">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+                  <input
+                    id="valor-reforco-proposta"
+                    type="text"
+                    inputMode="numeric"
+                    value={reforcoFormatado}
+                    onChange={handleReforcoChange}
+                    placeholder="Valor de cada reforço"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-[#1a1a2e] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#c62828]/30 focus:border-[#c62828] transition-all"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2" role="group" aria-label="Periodicidade dos reforços">
+                  {(Object.keys(PERIODICIDADE_REFORCO) as PeriodicidadeReforco[]).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPeriodicidadeReforco(p)}
+                      aria-pressed={periodicidadeReforco === p}
+                      className={`py-2.5 rounded-lg text-sm font-medium border transition-all ${
+                        periodicidadeReforco === p
+                          ? "bg-[#c62828] text-white border-[#c62828]"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-[#c62828]/50"
+                      }`}
+                    >
+                      {PERIODICIDADE_REFORCO[p].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {simulacao.quantidadeReforcos > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {reforcosLabel} = <span className="font-semibold">{formatCurrency(simulacao.reforcos)}</span> (meses {simulacao.mesesReforcos.join(", ")})
+                </p>
+              )}
             </div>
 
             {/* BLOCO 1: DURANTE A OBRA — ENTRADA */}
@@ -727,7 +845,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
               </h4>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Valor do Im\u00f3vel:</span>
+                  <span className="text-sm text-gray-600">Valor do Imóvel{docLabel}:</span>
                   <span className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.valorImovel)}</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -736,7 +854,7 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
                 </div>
                 {simulacao.reforcos > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Refor\u00e7os:</span>
+                    <span className="text-sm text-gray-600">Reforços{reforcosLabel ? ` (${reforcosLabel})` : ""}:</span>
                     <span className="text-sm font-bold text-[#c62828]">- {formatCurrency(simulacao.reforcos)}</span>
                   </div>
                 )}
@@ -833,25 +951,6 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
                 <p className="text-[10px] text-white/50 mt-1">{simulacao.prazoMeses} parcelas \u2022 Tabela Price + TR</p>
               </div>
             </div>
-          </div>
-
-          {/* Seleção de Unidade (opcional) */}
-          <div>
-            <label className="block text-sm font-semibold text-[#1a1a2e] mb-2">
-              <Home size={14} className="inline mr-1" /> Selecionar Unidade (opcional \u2014 preenche valor automaticamente)
-            </label>
-            <select
-              value={unidadeId}
-              onChange={(e) => setUnidadeId(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-[#c62828]/20 focus:border-[#c62828] transition-all"
-            >
-              <option value="">-- Usar valor do slider acima --</option>
-              {UNIDADES.filter(u => u.status === "disponivel").map((u) => (
-                <option key={u.id} value={u.id}>
-                  Unidade {u.numero} \u2014 {u.andar}\u00ba Andar \u2014 {u.area.toFixed(2).replace(".", ",")} m\u00b2 \u2014 {formatCurrency(u.valorVenda)}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Dados do Cliente */}
