@@ -7,17 +7,16 @@
  * - Entrada mínima: 20% do valor da unidade
  * - Entrada parcelada em até 48x (padrão 36x), escolhido pelo usuário
  * - Reforços: periódicos (trimestral, semestral ou anual) dentro do prazo da entrada;
- *   abatidos da entrada antes do parcelamento (NÃO diminuem o financiamento)
- * - Financiamento = Valor Unidade - Entrada Total (máximo 80%)
- * - Entrada + Financiamento = sempre 100% do valor da unidade
+ *   ABATIDOS DO FINANCIAMENTO (não alteram a entrada nem a parcela da entrada)
+ * - Financiamento = Valor Unidade - Entrada Total - Reforços (máximo 80%)
+ * - Entrada + Reforços + Financiamento = sempre 100% do valor da unidade
  *
  * Fórmula:
  *   Entrada Total = Valor × % Entrada
+ *   Parcela Mensal = Entrada Total / Nº Parcelas Entrada
  *   Qtd Reforços   = floor(Nº Parcelas Entrada / meses da periodicidade)
- *   Reforços       = Valor do Reforço × Qtd Reforços (limitado à Entrada Total)
- *   Saldo Parcelado = Entrada Total - Reforços
- *   Parcela Mensal = Saldo Parcelado / Nº Parcelas Entrada
- *   Financiamento = Valor - Entrada Total (nunca > 80%)
+ *   Reforços       = Valor do Reforço × Qtd Reforços (limitado a Valor - Entrada)
+ *   Financiamento  = Valor - Entrada Total - Reforços
  */
 
 export const CEF_PARAMS = {
@@ -40,6 +39,11 @@ export const PERIODICIDADE_REFORCO: Record<PeriodicidadeReforco, { meses: number
   semestral: { meses: 6, label: "Semestral" },
   anual: { meses: 12, label: "Anual" },
 };
+
+/** Percentual para exibição em pt-BR: 80 → "80", 70.8 → "70,8". */
+export function formatarPercentual(p: number): string {
+  return Number.isInteger(p) ? String(p) : p.toFixed(1).replace(".", ",");
+}
 
 /** Limita o número de parcelas da entrada ao intervalo permitido (1 a 48). */
 export function limitarParcelasEntrada(n: number | undefined): number {
@@ -99,8 +103,9 @@ export interface SimulacaoInput {
  * Calcula todos os valores da simulação CEF a partir dos parâmetros de entrada.
  * Mesma fórmula usada em todos os módulos do sistema.
  *
- * REGRA-CHAVE: "reforço não diminui o financiamento;
- * reforço apenas reduz o saldo da entrada que será dividido em até 48x."
+ * REGRA-CHAVE (definida pelo cliente): "os reforços são abatidos do valor
+ * do financiamento, e não da entrada". A entrada é sempre % × valor,
+ * dividida em até 48x; cada reforço reduz o saldo financiado na CEF.
  */
 export function calcularSimulacaoCEF(input: SimulacaoInput): SimulacaoCEF {
   const { valorImovel, prazoMeses, isCotista } = input;
@@ -123,19 +128,19 @@ export function calcularSimulacaoCEF(input: SimulacaoInput): SimulacaoCEF {
     ? valorReforco * quantidadeReforcos
     : (input.reforcos ?? 0);
 
-  // Total de reforços (não pode ser negativo, não pode ser maior que a entrada)
-  const reforcos = Math.max(Math.min(reforcosBrutos, entradaTotal), 0);
+  // Total de reforços (não pode ser negativo, não pode ser maior que o saldo a financiar)
+  const reforcos = Math.max(Math.min(reforcosBrutos, valorImovel - entradaTotal), 0);
 
-  // Saldo Parcelado = Entrada Total - Reforços
-  const saldoParcelado = Math.max(entradaTotal - reforcos, 0);
+  // Entrada parcelada: a entrada inteira, sem abatimento de reforços
+  const saldoParcelado = entradaTotal;
 
-  // Parcela Mensal da Entrada = Saldo Parcelado / Nº Parcelas
+  // Parcela Mensal da Entrada = Entrada Total / Nº Parcelas
   const parcelaEntrada = saldoParcelado / numParcelasEntrada;
 
-  // Financiamento = Valor - Entrada Total (máximo 80%)
-  // IMPORTANTE: Reforço NÃO altera o financiamento
-  const percentualFinanciado = 100 - percentualEntrada;
-  const valorFinanciado = valorImovel - entradaTotal;
+  // Financiamento = Valor - Entrada Total - Reforços
+  // IMPORTANTE: reforço abate o financiamento, não a entrada
+  const valorFinanciado = Math.max(valorImovel - entradaTotal - reforcos, 0);
+  const percentualFinanciado = valorImovel > 0 ? Math.round((valorFinanciado / valorImovel) * 1000) / 10 : 0;
 
   // Taxa mensal (Price)
   const taxaAnual = isCotista ? CEF_PARAMS.taxaAnualCotista : CEF_PARAMS.taxaAnual;
@@ -154,8 +159,8 @@ export function calcularSimulacaoCEF(input: SimulacaoInput): SimulacaoCEF {
   // Parcela total do financiamento (1ª parcela)
   const parcelaFinanciamento = parcelaAmortizacao + seguroMIP + seguroDFI + taxaAdm;
 
-  // Total da operação = Entrada Total + Financiamento Total (parcelas × prazo)
-  const totalOperacao = entradaTotal + (parcelaFinanciamento * prazoMeses);
+  // Total da operação = Entrada Total + Reforços + Financiamento Total (parcelas × prazo)
+  const totalOperacao = entradaTotal + reforcos + (parcelaFinanciamento * prazoMeses);
 
   return {
     valorImovel,

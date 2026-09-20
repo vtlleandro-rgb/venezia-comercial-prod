@@ -4,7 +4,7 @@ import { EMPREENDIMENTO, UNIDADES, normalizarUnidades, calcularValorComDocumenta
 import { trpc } from "@/lib/trpc";
 import { Calculator, Landmark, CreditCard, Info, FileText, DollarSign } from "lucide-react";
 import PropostaComercial from "@/components/PropostaComercial";
-import { calcularSimulacaoCEF, CEF_PARAMS, PERIODICIDADE_REFORCO, type PeriodicidadeReforco } from "@/lib/simuladorCEF";
+import { calcularSimulacaoCEF, CEF_PARAMS, PERIODICIDADE_REFORCO, formatarPercentual, type PeriodicidadeReforco } from "@/lib/simuladorCEF";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 }).format(value);
@@ -66,7 +66,7 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
     ? new Intl.NumberFormat("pt-BR").format(valorReforco)
     : "";
 
-  const reforcoExcedeEntrada = simulacao.valorReforco * simulacao.quantidadeReforcos > simulacao.entradaTotal;
+  const reforcoExcedeFinanciamento = simulacao.valorReforco * simulacao.quantidadeReforcos > simulacao.valorImovel - simulacao.entradaTotal;
   const nx = simulacao.numParcelasEntrada;
 
   return (
@@ -213,8 +213,8 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
           {/* Reforços periódicos */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <label htmlFor="valor-reforco" className="text-sm font-medium text-gray-700">Reforços (abatidos da entrada)</label>
-              <span className="text-xs text-gray-400">Opcional • Não altera o financiamento</span>
+              <label htmlFor="valor-reforco" className="text-sm font-medium text-gray-700">Reforços (abatidos do financiamento)</label>
+              <span className="text-xs text-gray-400">Opcional • Não altera a entrada</span>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="relative">
@@ -258,12 +258,12 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
               ) : valorReforco > 0 ? (
                 <>Nenhum reforço {PERIODICIDADE_REFORCO[periodicidadeReforco].label.toLowerCase()} cabe em {nx} {nx === 1 ? "mês" : "meses"} de entrada</>
               ) : (
-                <>Reforços {PLURAL_PERIODICIDADE[periodicidadeReforco]} dentro do prazo da entrada ({nx}x, máximo 48 meses) reduzem o saldo parcelado</>
+                <>Reforços {PLURAL_PERIODICIDADE[periodicidadeReforco]} dentro do prazo da entrada ({nx}x, máximo 48 meses) reduzem o valor financiado</>
               )}
             </p>
-            {reforcoExcedeEntrada && (
+            {reforcoExcedeFinanciamento && (
               <p className="text-xs text-[#c62828] mt-1">
-                Os reforços superam a entrada e foram limitados a {formatCurrency(simulacao.entradaTotal)}
+                Os reforços superam o saldo a financiar e foram limitados a {formatCurrency(simulacao.reforcos)}
               </p>
             )}
           </div>
@@ -282,13 +282,8 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
               <p className="text-xs text-gray-600">
                 Entrada Total: <span className="font-semibold">{formatCurrency(simulacao.entradaTotal)}</span>
               </p>
-              {simulacao.reforcos > 0 && (
-                <p className="text-xs text-gray-600">
-                  Reforços ({simulacao.quantidadeReforcos}x {PERIODICIDADE_REFORCO[simulacao.periodicidadeReforco].label.toLowerCase()}): <span className="font-semibold text-[#c62828]">- {formatCurrency(simulacao.reforcos)}</span>
-                </p>
-              )}
               <p className="text-xs text-gray-600">
-                Saldo Parcelado: <span className="font-semibold">{formatCurrency(simulacao.saldoParcelado)}</span> ÷ {nx} = <span className="font-semibold">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
+                Entrada Parcelada: <span className="font-semibold">{formatCurrency(simulacao.entradaTotal)}</span> ÷ {nx} = <span className="font-semibold">{formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
               </p>
             </div>
             <p className="text-xs text-gray-400 mt-2">
@@ -337,15 +332,20 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
           <div className="p-6 bg-[#1a1a2e] rounded-xl text-white mb-6">
             <div className="flex items-center gap-2 mb-1">
               <Calculator size={18} className="text-emerald-400" />
-              <span className="text-sm font-medium text-white/80">Financiamento CEF — {simulacao.percentualFinanciado}%</span>
+              <span className="text-sm font-medium text-white/80">Financiamento CEF — {formatarPercentual(simulacao.percentualFinanciado)}%</span>
             </div>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-4xl font-bold text-emerald-400">{formatCurrencyDecimal(simulacao.parcelaFinanciamento)}</span>
               <span className="text-sm text-white/50">/mês • {prazoMeses} parcelas • Tabela Price + TR</span>
             </div>
-            <p className="text-xs text-white/40 mt-2">
-              Valor Financiado: {formatCurrency(simulacao.valorFinanciado)} • Taxa: {simulacao.taxaAnual}% a.a. + TR
-            </p>
+            <div className="mt-3 space-y-1 text-xs text-white/60">
+              <p>Valor do Imóvel: <span className="font-semibold text-white/80">{formatCurrency(simulacao.valorImovel)}</span></p>
+              <p>Entrada ({simulacao.percentualEntrada}%): <span className="font-semibold text-white/80">- {formatCurrency(simulacao.entradaTotal)}</span></p>
+              {simulacao.reforcos > 0 && (
+                <p>Reforços ({simulacao.quantidadeReforcos}x {PERIODICIDADE_REFORCO[simulacao.periodicidadeReforco].label.toLowerCase()}): <span className="font-semibold text-emerald-300">- {formatCurrency(simulacao.reforcos)}</span></p>
+              )}
+              <p>Valor Financiado: <span className="font-semibold text-white">{formatCurrency(simulacao.valorFinanciado)}</span> • Taxa: {simulacao.taxaAnual}% a.a. + TR</p>
+            </div>
           </div>
 
           {/* ===== RESUMO COMPLETO DA SIMULAÇÃO ===== */}
@@ -372,8 +372,8 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
                 <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.reforcos)}</p>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-500">Saldo Parcelado</p>
-                <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.saldoParcelado)}</p>
+                <p className="text-xs text-gray-500">Entrada + Reforços</p>
+                <p className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.entradaTotal + simulacao.reforcos)}</p>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs text-gray-500">Parcela da Entrada ({nx}x)</p>
@@ -381,7 +381,7 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs text-gray-500">% Financiado</p>
-                <p className="text-sm font-bold text-[#0d47a1]">{simulacao.percentualFinanciado}%</p>
+                <p className="text-sm font-bold text-[#0d47a1]">{formatarPercentual(simulacao.percentualFinanciado)}%</p>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs text-gray-500">Valor Financiado</p>
@@ -432,7 +432,7 @@ export default function SimuladorSection({ corretor }: SimuladorSectionProps) {
               <div className="text-xs text-blue-800">
                 <p className="font-medium mb-1">Parâmetros CEF — Faixa 3 MCMV — Tijucas/SC</p>
                 <p>Entrada mínima: 20% do valor | Parcelamento: até 48x (INCC-M)</p>
-                <p>Reforços: trimestrais, semestrais ou anuais dentro do prazo da entrada, abatidos antes do parcelamento (não alteram o financiamento)</p>
+                <p>Reforços: trimestrais, semestrais ou anuais dentro do prazo da entrada, abatidos do valor financiado (não alteram a entrada)</p>
                 <p>Financiamento: máximo 80% via Programa MCMV | Sistema Price + TR | Prazo máximo: 420 meses</p>
               </div>
             </div>

@@ -6,7 +6,7 @@ import {
   CEF_PARAMS,
 } from "@/lib/simuladorCEF";
 
-describe("Simulador CEF — parcelas da entrada (até 48x) e reforços periódicos", () => {
+describe("Simulador CEF — parcelas da entrada (até 48x) e reforços periódicos abatidos do financiamento", () => {
   it("mantém 36x como padrão quando nada é informado", () => {
     const sim = calcularSimulacaoCEF({ valorImovel: 375000, percentualEntrada: 20, prazoMeses: 420, isCotista: false });
     expect(sim.numParcelasEntrada).toBe(36);
@@ -32,17 +32,20 @@ describe("Simulador CEF — parcelas da entrada (até 48x) e reforços periódic
     expect(mesesDosReforcos(5, "semestral")).toEqual([]);
   });
 
-  it("calcula reforços semestrais de R$ 5.000 em 36x", () => {
+  it("reforços semestrais de R$ 5.000 em 36x abatem o financiamento, não a entrada", () => {
     const sim = calcularSimulacaoCEF({
       valorImovel: 375000, percentualEntrada: 20, numParcelasEntrada: 36,
       valorReforco: 5000, periodicidadeReforco: "semestral", prazoMeses: 420, isCotista: false,
     });
     expect(sim.quantidadeReforcos).toBe(6);
     expect(sim.reforcos).toBe(30000);
-    expect(sim.saldoParcelado).toBe(45000);
-    expect(sim.parcelaEntrada).toBeCloseTo(1250, 2);
-    // financiamento não muda com reforço
-    expect(sim.valorFinanciado).toBe(300000);
+    // entrada intacta
+    expect(sim.entradaTotal).toBe(75000);
+    expect(sim.parcelaEntrada).toBeCloseTo(75000 / 36, 2);
+    // financiamento reduzido
+    expect(sim.valorFinanciado).toBe(270000);
+    expect(sim.percentualFinanciado).toBe(72);
+    expect(sim.entradaTotal + sim.reforcos + sim.valorFinanciado).toBe(375000);
   });
 
   it("reforços anuais em 48x e trimestrais em 48x", () => {
@@ -52,7 +55,8 @@ describe("Simulador CEF — parcelas da entrada (até 48x) e reforços periódic
     });
     expect(anual.quantidadeReforcos).toBe(4);
     expect(anual.reforcos).toBe(40000);
-    expect(anual.parcelaEntrada).toBeCloseTo((80000 - 40000) / 48, 2);
+    expect(anual.parcelaEntrada).toBeCloseTo(80000 / 48, 2);
+    expect(anual.valorFinanciado).toBe(280000);
 
     const trimestral = calcularSimulacaoCEF({
       valorImovel: 400000, percentualEntrada: 20, numParcelasEntrada: 48,
@@ -60,21 +64,35 @@ describe("Simulador CEF — parcelas da entrada (até 48x) e reforços periódic
     });
     expect(trimestral.quantidadeReforcos).toBe(16);
     expect(trimestral.reforcos).toBe(32000);
+    expect(trimestral.valorFinanciado).toBe(288000);
   });
 
-  it("limita os reforços ao total da entrada", () => {
+  it("limita os reforços ao saldo a financiar", () => {
     const sim = calcularSimulacaoCEF({
       valorImovel: 375000, percentualEntrada: 20, numParcelasEntrada: 48,
-      valorReforco: 50000, periodicidadeReforco: "anual", prazoMeses: 420, isCotista: false,
+      valorReforco: 100000, periodicidadeReforco: "anual", prazoMeses: 420, isCotista: false,
     });
-    expect(sim.reforcos).toBe(75000);
-    expect(sim.saldoParcelado).toBe(0);
-    expect(sim.parcelaEntrada).toBe(0);
+    expect(sim.reforcos).toBe(300000);
+    expect(sim.valorFinanciado).toBe(0);
+    expect(sim.parcelaEntrada).toBeCloseTo(75000 / 48, 2);
   });
 
-  it("continua aceitando o total de reforços (compatibilidade com a proposta)", () => {
+  it("continua aceitando o total de reforços (compatibilidade)", () => {
     const sim = calcularSimulacaoCEF({ valorImovel: 375000, percentualEntrada: 20, numParcelasEntrada: 40, reforcos: 30000, prazoMeses: 420, isCotista: false });
     expect(sim.reforcos).toBe(30000);
-    expect(sim.parcelaEntrada).toBeCloseTo(45000 / 40, 2);
+    expect(sim.parcelaEntrada).toBeCloseTo(75000 / 40, 2);
+    expect(sim.valorFinanciado).toBe(270000);
+  });
+
+  it("com documentação (4%): 301 a R$ 435.760, 48x, 8 reforços semestrais de R$ 5.000", () => {
+    const sim = calcularSimulacaoCEF({
+      valorImovel: 435760, percentualEntrada: 20, numParcelasEntrada: 48,
+      valorReforco: 5000, periodicidadeReforco: "semestral", prazoMeses: 420, isCotista: false,
+    });
+    expect(sim.entradaTotal).toBe(87152);
+    expect(sim.parcelaEntrada).toBeCloseTo(87152 / 48, 2);
+    expect(sim.quantidadeReforcos).toBe(8);
+    expect(sim.reforcos).toBe(40000);
+    expect(sim.valorFinanciado).toBe(308608);
   });
 });

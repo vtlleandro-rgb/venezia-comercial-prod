@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 import { apiUrl } from "@/lib/api";
-import { calcularSimulacaoCEF, CEF_PARAMS, PERIODICIDADE_REFORCO, type PeriodicidadeReforco } from "@/lib/simuladorCEF";
+import { calcularSimulacaoCEF, CEF_PARAMS, PERIODICIDADE_REFORCO, formatarPercentual, type PeriodicidadeReforco } from "@/lib/simuladorCEF";
 import { generatePdfClientSide } from "@/lib/pdfClientFallback";
 
 const formatCurrency = (value: number) =>
@@ -271,20 +271,19 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#1a1a2e;line
 <h3>① Durante a Obra — Entrada ${simulacao.percentualEntrada}%</h3>
 <div class="item"><span class="label">Valor do Imóvel:</span><span class="value">${formatCurrency(simulacao.valorImovel)}${docLabel}</span></div>
 <div class="item"><span class="label">Entrada (${simulacao.percentualEntrada}%):</span><span class="value">${formatCurrency(simulacao.entradaTotal)}</span></div>
-${simulacao.reforcos > 0 ? `<div class="item"><span class="label">Reforços${reforcosLabel ? ` (${reforcosLabel})` : ""}:</span><span class="value">- ${formatCurrency(simulacao.reforcos)}</span></div>` : ""}
-<div class="item"><span class="label">Saldo Parcelado:</span><span class="value">${formatCurrency(simulacao.saldoParcelado)}</span></div>
 <div class="item"><span class="label">Entrada Parcelada:</span><span class="value">${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}</span></div>
 <div class="destaque">
 <p class="dl">Parcela da Entrada</p>
 <p class="dv">${formatCurrencyDecimal(simulacao.parcelaEntrada)}/mês</p>
-<p class="dd">${simulacao.numParcelasEntrada} parcelas • Correção pelo INCC-M${simulacao.reforcos > 0 ? ` • Reforços: ${formatCurrency(simulacao.reforcos)}` : ""}</p>
+<p class="dd">${simulacao.numParcelasEntrada} parcelas • Correção pelo INCC-M</p>
 </div>
 </div>
 
 <!-- BLOCO 2: FINANCIAMENTO CEF -->
 <div class="bloco-cef">
-<h3>② Financiamento CEF — ${simulacao.percentualFinanciado}%</h3>
-<div class="item"><span class="label">Valor Financiado (${simulacao.percentualFinanciado}%):</span><span class="value">${formatCurrency(simulacao.valorFinanciado)}</span></div>
+<h3>② Financiamento CEF — ${formatarPercentual(simulacao.percentualFinanciado)}%</h3>
+${simulacao.reforcos > 0 ? `<div class="item"><span class="label">Reforços${reforcosLabel ? ` (${reforcosLabel})` : ""} abatidos do financiamento:</span><span class="value">- ${formatCurrency(simulacao.reforcos)}</span></div>` : ""}
+<div class="item"><span class="label">Valor Financiado (${formatarPercentual(simulacao.percentualFinanciado)}%):</span><span class="value">${formatCurrency(simulacao.valorFinanciado)}</span></div>
 <div class="item"><span class="label">Prazo:</span><span class="value">${simulacao.prazoMeses} meses (${prazoAnos} anos)</span></div>
 <div class="item"><span class="label">Sistema:</span><span class="value">Tabela Price + TR</span></div>
 <div class="item"><span class="label">Taxa de Juros:</span><span class="value">${simulacao.taxaAnual.toFixed(2)}% a.a. + TR${simulacao.isCotista ? " (Cotista FGTS)" : ""}</span></div>
@@ -572,11 +571,10 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `*🛠️ DURANTE A OBRA (Entrada ${simulacao.percentualEntrada}%):*\n\n` +
       `✅ Entrada Total: ${formatCurrency(simulacao.entradaTotal)}\n` +
-      (simulacao.reforcos > 0 ? `✅ Reforços${reforcosLabel ? ` (${reforcosLabel})` : ""}: ${formatCurrency(simulacao.reforcos)}\n` : "") +
-      `✅ Saldo Parcelado: ${formatCurrency(simulacao.saldoParcelado)}\n` +
       `✅ Parcelamento: *${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}*\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `*🏦 FINANCIAMENTO CEF (${simulacao.percentualFinanciado}%):*\n\n` +
+      `*🏦 FINANCIAMENTO CEF (${formatarPercentual(simulacao.percentualFinanciado)}%):*\n\n` +
+      (simulacao.reforcos > 0 ? `✅ Reforços${reforcosLabel ? ` (${reforcosLabel})` : ""} abatidos do financiamento: - ${formatCurrency(simulacao.reforcos)}\n` : "") +
       `💳 Saldo Financiado: ${formatCurrency(simulacao.valorFinanciado)}\n` +
       `📊 *Parcela Estimada: ${formatCurrencyDecimal(simulacao.parcelaFinanciamento)}/mês*\n` +
       `⏱️ Prazo: ${simulacao.prazoMeses} meses (${prazoAnos} anos)\n` +
@@ -612,12 +610,11 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
       `${'━'.repeat(50)}\n` +
       `DURANTE A OBRA (ENTRADA ${simulacao.percentualEntrada}%)\n\n` +
       `  Entrada Total (${simulacao.percentualEntrada}%): ${formatCurrency(simulacao.entradaTotal)}\n` +
-      (simulacao.reforcos > 0 ? `  Reforços${reforcosLabel ? ` (${reforcosLabel})` : ""}: ${formatCurrency(simulacao.reforcos)}\n` : "") +
-      `  Saldo Parcelado: ${formatCurrency(simulacao.saldoParcelado)}\n` +
       `  Parcelamento: ${simulacao.numParcelasEntrada}x de ${formatCurrencyDecimal(simulacao.parcelaEntrada)}\n\n` +
       `  >>> PARCELA DA ENTRADA: ${formatCurrencyDecimal(simulacao.parcelaEntrada)}/mês\n\n` +
       `${'━'.repeat(50)}\n` +
-      `FINANCIAMENTO CEF (${simulacao.percentualFinanciado}%)\n\n` +
+      `FINANCIAMENTO CEF (${formatarPercentual(simulacao.percentualFinanciado)}%)\n\n` +
+      (simulacao.reforcos > 0 ? `  Reforços${reforcosLabel ? ` (${reforcosLabel})` : ""} abatidos do financiamento: - ${formatCurrency(simulacao.reforcos)}\n` : "") +
       `  Saldo Financiado: ${formatCurrency(simulacao.valorFinanciado)}\n` +
       `  Prazo: ${simulacao.prazoMeses} meses (${prazoAnos} anos)\n` +
       `  Sistema: Tabela Price + TR\n` +
@@ -797,8 +794,8 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
             {/* Reforços periódicos */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2">
-                <label htmlFor="valor-reforco-proposta" className="text-sm font-medium text-gray-700">Reforços</label>
-                <span className="text-xs text-gray-400">Não altera o financiamento</span>
+                <label htmlFor="valor-reforco-proposta" className="text-sm font-medium text-gray-700">Reforços (abatidos do financiamento)</label>
+                <span className="text-xs text-gray-400">Não altera a entrada</span>
               </div>
               <div className="grid sm:grid-cols-2 gap-2">
                 <div className="relative">
@@ -852,16 +849,6 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
                   <span className="text-sm text-gray-600">Entrada ({simulacao.percentualEntrada}%):</span>
                   <span className="text-sm font-bold text-[#c62828]">{formatCurrency(simulacao.entradaTotal)}</span>
                 </div>
-                {simulacao.reforcos > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Reforços{reforcosLabel ? ` (${reforcosLabel})` : ""}:</span>
-                    <span className="text-sm font-bold text-[#c62828]">- {formatCurrency(simulacao.reforcos)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Saldo Parcelado:</span>
-                  <span className="text-sm font-bold text-[#1a1a2e]">{formatCurrency(simulacao.saldoParcelado)}</span>
-                </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Entrada Parcelada:</span>
                   <span className="text-sm font-bold text-[#1a1a2e]">{simulacao.numParcelasEntrada}x de {formatCurrencyDecimal(simulacao.parcelaEntrada)}</span>
@@ -913,11 +900,17 @@ ${observacoes ? `<div style="background:#fffde7;border:1px solid #fff9c4;padding
             {/* BLOCO 2: FINANCIAMENTO CEF */}
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200">
               <h4 className="text-xs font-bold text-[#0d47a1] uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Calculator size={14} /> Bloco 2 — Financiamento CEF ({simulacao.percentualFinanciado}%)
+                <Calculator size={14} /> Bloco 2 — Financiamento CEF ({formatarPercentual(simulacao.percentualFinanciado)}%)
               </h4>
               <div className="space-y-2">
+                {simulacao.reforcos > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-blue-700">Reforços{reforcosLabel ? ` (${reforcosLabel})` : ""} abatidos do financiamento:</span>
+                    <span className="text-sm font-bold text-[#0d47a1]">- {formatCurrency(simulacao.reforcos)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-blue-700">Valor Financiado ({simulacao.percentualFinanciado}%):</span>
+                  <span className="text-sm text-blue-700">Valor Financiado ({formatarPercentual(simulacao.percentualFinanciado)}%):</span>
                   <span className="text-sm font-bold text-[#0d47a1]">{formatCurrency(simulacao.valorFinanciado)}</span>
                 </div>
                 <div className="flex justify-between items-center">
