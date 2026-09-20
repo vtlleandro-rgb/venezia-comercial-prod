@@ -30,11 +30,11 @@ export default function EmpreendimentoSection() {
         {/* Content Grid */}
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Image */}
-          <div className="relative rounded-lg overflow-hidden shadow-xl">
+          <div className="relative rounded-lg overflow-hidden shadow-xl w-full max-w-md mx-auto">
             <img
               src={IMAGENS.fachadaEmpreendimento}
               alt="Fachada Residencial Venezia"
-              className="w-full h-[400px] object-cover"
+              className="w-full h-auto aspect-[3/4] object-cover"
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-6">
               <p className="text-white font-serif text-xl">Arquitetura Contemporânea</p>
